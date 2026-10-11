@@ -1,14 +1,19 @@
 {
-  "name": "Mr Question? Offline Edition",
+  "name": "Mr Question?",
   "short_name": "Mr Question?",
-  "description": "Il gioco dell'impostore, anche offline.",
+  "description": "Il party game dell'impostore.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#101426",
-  "theme_color": "#101426",
+  "background_color": "#090a0d",
+  "theme_color": "#090a0d",
   "icons": [
-    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }

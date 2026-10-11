@@ -1,0 +1,3 @@
+Quando avrai generato il logo, carica qui un file chiamato logo.png nella stessa cartella di index.html.
+L’interfaccia lo mostrerà automaticamente in alto; se non esiste, viene usato il logotipo testuale integrato.
+Consigliato: PNG trasparente, versione orizzontale, larghezza 600–1000 px.
