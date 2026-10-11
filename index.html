@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101426">
+  <meta name="description" content="Mr Question? Il gioco dell'impostore, anche offline.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <title>Mr Question?</title>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand-mark">?</div>
+      <div><div class="brand">MR QUESTION<span>?</span></div><div class="tagline">Una domanda. Un impostore. Fidati poco.</div></div>
+      <button id="archiveOpen" class="icon-button" aria-label="Archivio domande" title="Archivio">▤</button>
+    </header>
+
+    <section id="homeScreen" class="screen active">
+      <div class="hero">
+        <div class="eyebrow">IL SOSPETTO È TRA VOI</div>
+        <h1>Chi sta<br><em>mentendo?</em></h1>
+        <p>Tutti ricevono una domanda simile. Uno solo ne riceve una diversa. Rispondete, osservate, accusate.</p>
+        <div class="hero-orb orb-one"></div><div class="hero-orb orb-two"></div>
+      </div>
+      <div class="panel setup-panel">
+        <div class="section-heading"><span>01 / GIOCATORI</span><span id="playerCountLabel">3 giocatori</span></div>
+        <div class="stepper"><button id="minusPlayers" class="step-button" aria-label="Meno giocatori">−</button><strong id="playerCount">3</strong><button id="plusPlayers" class="step-button" aria-label="Più giocatori">+</button></div>
+        <div id="nameFields" class="name-fields"></div>
+        <button id="startGame" class="primary-button">INIZIA LA PARTITA <span>↗</span></button>
+        <div class="small-note"><span class="green-dot"></span> Funziona offline dopo la prima apertura/installazione</div>
+      </div>
+      <div class="home-footer"><span>DOMANDE NELL'ARCHIVIO</span><strong id="bankCount">—</strong><span class="footer-separator">•</span><button id="manageArchive" class="text-button">Gestisci archivio</button></div>
+    </section>
+
+    <section id="turnScreen" class="screen">
+      <div class="progress-line"><div id="progressFill"></div></div>
+      <div class="turn-meta"><span id="turnStep">TURNO 1 / 3</span><span>PASSA IL TELEFONO</span></div>
+      <div class="turn-card">
+        <div class="lock-icon">◈</div>
+        <div class="eyebrow">SOLO PER I TUOI OCCHI</div>
+        <h2>Turno di<br><em id="currentPlayerName">Dani</em></h2>
+        <p id="turnInstruction">Quando hai il telefono in mano, mostra la domanda. Non far sbirciare gli altri.</p>
+        <button id="showQuestion" class="primary-button">MOSTRA DOMANDA <span>↗</span></button>
+        <div id="questionArea" class="question-area hidden">
+          <div class="question-label">LA TUA DOMANDA</div>
+          <p id="questionText" class="question-text"></p>
+          <label class="answer-label" for="answerInput">LA TUA RISPOSTA NUMERICA</label>
+          <input id="answerInput" inputmode="decimal" type="number" step="any" placeholder="Scrivi un numero" autocomplete="off">
+          <button id="confirmAnswer" class="primary-button">CONFERMA RISPOSTA <span>✓</span></button>
+        </div>
+      </div>
+      <div class="privacy-note">◉ Le risposte precedenti restano nascoste.</div>
+    </section>
+
+    <section id="voteScreen" class="screen">
+      <div class="eyebrow">TUTTI HANNO RISPOSTO</div>
+      <h1 class="page-title">È il momento<br><em>di sospettare.</em></h1>
+      <p class="page-subtitle">Leggete la domanda comune e confrontate le risposte. Chi sembra fuori posto?</p>
+      <div class="common-question"><div class="question-label">DOMANDA COMUNE</div><p id="commonQuestionText"></p></div>
+      <div id="answersList" class="answers-list"></div>
+      <button id="goVote" class="primary-button">VOTA L'IMPOSTORE <span>↗</span></button>
+      <button id="restartHome" class="secondary-button">ANNULLA PARTITA</button>
+    </section>
+
+    <section id="ballotScreen" class="screen">
+      <div class="eyebrow">SCRUTINIO SEGRETO</div>
+      <h1 class="page-title">Chi ti sembra<br><em>l'impostore?</em></h1>
+      <p class="page-subtitle">Scegli un solo sospettato. Puoi cambiare idea prima di confermare.</p>
+      <div id="voteOptions" class="vote-options"></div>
+      <div id="voteConfirmBox" class="vote-confirm-box hidden"><p id="voteConfirmText"></p><button id="confirmVote" class="primary-button">CONFERMO IL VOTO <span>✓</span></button><button id="changeVote" class="text-button">Cambia sospettato</button></div>
+      <button id="backToAnswers" class="secondary-button">TORNA ALLE RISPOSTE</button>
+    </section>
+
+    <section id="resultScreen" class="screen">
+      <div id="resultIcon" class="result-icon">✦</div>
+      <div id="resultEyebrow" class="eyebrow">VERDETTO</div>
+      <h1 id="resultTitle" class="result-title">Beccato.</h1>
+      <p id="resultText" class="result-text"></p>
+      <div class="reveal-card"><div class="question-label">L'IMPOSTORE ERA</div><strong id="impostorReveal"></strong><p>La sua domanda alternativa resta segreta. I segreti sono il sale della civiltà.</p></div>
+      <button id="rematch" class="primary-button">RIVINCITA <span>↻</span></button>
+      <button id="newGame" class="secondary-button">NUOVA PARTITA</button>
+    </section>
+
+    <section id="archiveScreen" class="screen">
+      <button class="back-link" id="closeArchive">← INDIETRO</button>
+      <div class="eyebrow">IL CERVELLO DEL GIOCO</div>
+      <h1 class="page-title">Archivio<br><em>domande.</em></h1>
+      <p class="page-subtitle">Le domande sono salvate sul dispositivo. Importa pacchetti creati con Grok per far crescere l'archivio. Nessuna chiamata online durante il gioco.</p>
+      <div class="archive-stats"><div><strong id="archiveTotal">0</strong><span>coppie disponibili</span></div><div><strong id="archiveUsed">0</strong><span>già utilizzate</span></div></div>
+      <button id="exportArchive" class="primary-button">ESPORTA ARCHIVIO <span>↓</span></button>
+      <label class="secondary-button file-label">IMPORTA PACCHETTO JSON <span>↑</span><input id="importFile" type="file" accept="application/json,.json"></label>
+      <button id="resetUsed" class="secondary-button">AZZERA DOMANDE UTILIZZATE</button>
+      <details class="grok-details"><summary>Prompt per Grok</summary><p>Copia questo prompt in Grok per generare pacchetti compatibili con l'app.</p><textarea id="grokPrompt" readonly></textarea><button id="copyPrompt" class="secondary-button">COPIA PROMPT</button></details>
+      <div id="archiveMessage" class="archive-message" role="status"></div>
+    </section>
+
+    <footer class="app-bottom"><span>MR QUESTION? <b>•</b> OFFLINE EDITION</span><span id="connectionStatus">● PRONTO</span></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
