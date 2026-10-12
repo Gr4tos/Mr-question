@@ -1,0 +1,303 @@
+/* =========================================================================
+   MR QUESTION? — Direzione artistica "Dossier del detective dilettante"
+   Fondo scuro = tavolo d'archivio. Schede avorio appoggiate sopra.
+   Rosso timbro = ufficiale/stati. Giallo evidenziatore = indizi/azione.
+   Mono (Courier) = etichette/documenti. Sans = domande/risposte/nomi.
+   ========================================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Special+Elite&display=swap');
+
+:root{
+  color-scheme: dark;
+  --ink:        #15120d;   /* tavolo, fondo scuro inchiostro caldo */
+  --ink-2:      #1d1a13;   /* fondo alternativo */
+  --paper:      #efe7d6;   /* carta avorio schede */
+  --paper-2:    #f7f1e3;   /* carta chiara sotto-schede/campi */
+  --paper-3:    #fffdf6;   /* carta quasi bianca, input */
+  --paper-edge: #cdbf9f;   /* bordo carta */
+  --paper-line: #b7a98a;   /* linee tratteggiate su carta */
+  --paper-ink:  #2b2620;   /* testo scuro su carta */
+  --paper-ink2: #6a5d45;   /* testo secondario su carta */
+  --paper-ink3: #8a7b58;   /* testo terziario/mono tenue */
+  --stamp:      #a7332e;   /* rosso timbro */
+  --stamp-ink:  #8d2420;   /* rosso scuro per testo su rosso tenue */
+  --stamp-bg:   #f3e3df;   /* rosso tenue di sfondo */
+  --hi:         #d8b739;   /* giallo evidenziatore (azione) */
+  --hi-ink:     #7d5f0e;   /* giallo scuro per testo */
+  --hi-bg:      #f6edcf;   /* giallo tenue di sfondo */
+  --emblem:     #f2c51c;   /* sagoma detective, faccia */
+  --emblem-side:#a87f0c;   /* sagoma detective, spessore cartoncino */
+  --key-top:    #f3ecdb;   /* tasto beige alto */
+  --key-bot:    #e4d9bf;   /* tasto beige basso */
+  --key-edge:   #b3a079;   /* bordo/ombra tasto */
+  --key-ink:    #4a3f29;   /* testo sul tasto */
+  --green:      #5f8d57;
+  --danger:     #a7332e;
+  --radius:     10px;
+  --mono: 'Special Elite', 'Courier New', ui-monospace, monospace;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+*{ box-sizing: border-box; }
+html{ background: var(--ink); -webkit-text-size-adjust: 100%; scrollbar-width: none; }
+html::-webkit-scrollbar{ display:none; }
+body{
+  margin:0; min-height:100vh; min-height:100dvh;
+  background:
+    radial-gradient(ellipse at 50% -10%, #2a2318 0%, #1a160f 42%, var(--ink) 78%);
+  color: var(--paper);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -.01em;
+}
+button, input{ font: inherit; }
+button{ touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+.app-shell{
+  position: relative; isolation: isolate;
+  width:100%; max-width: 460px; margin:0 auto;
+  min-height:100vh; min-height:100dvh;
+  padding: calc(14px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; overflow:hidden;
+}
+
+/* ---------- Topbar: intestazione fascicolo ---------- */
+.topbar{
+  display:flex; align-items:center; gap:12px;
+  padding: 2px 2px 12px; margin-bottom: 4px;
+  border-bottom: 1px dashed #4a4030;
+}
+.brand-lockup{ display:flex; flex-direction:column; gap:2px; min-height:34px; justify-content:center; }
+.brand-logo{ display:block; max-width:150px; width:auto; height:34px; object-fit:contain; object-position:left center; }
+.brand-logo.logo-missing{ display:none; }
+.brand-fallback{ display:flex; flex-direction:column; gap:1px; }
+.case-no{ font-family: var(--mono); font-size:9px; letter-spacing:.14em; color:#8a7c5c; }
+.case-no b{ color:#b7a87f; font-weight:400; }
+.brand-name{ font-family: var(--mono); font-size:16px; line-height:1; letter-spacing:.01em; color: var(--paper); }
+.brand-mark{ color: var(--stamp); }
+.connection-pill{
+  margin-left:auto; display:flex; align-items:center; gap:6px;
+  padding:5px 10px; border:1px solid #4a4030; border-radius:4px;
+  font-family: var(--mono); font-size:9px; letter-spacing:.12em; color:#9a8c6a;
+}
+.status-dot{ width:6px; height:6px; border-radius:50%; background: var(--green); }
+.connection-pill.is-offline{ color: var(--stamp); border-color:#5a2d28; }
+.connection-pill.is-offline .status-dot{ background: var(--stamp); }
+
+/* ---------- Schermate ---------- */
+.screen{ display:none; flex:1; animation: screen-in .26s cubic-bezier(.2,.7,.2,1); }
+.screen.active{ display:block; }
+@keyframes screen-in{ from{opacity:0; transform:translateY(7px);} to{opacity:1; transform:none;} }
+
+/* ---------- Scheda di carta (contenitore ricorrente) ---------- */
+.setup-card, .private-stage, .common-question, .answer-row,
+.vote-option, .reveal-card, .vote-confirm-box, .question-area input,
+.name-input, .answers-list .answer-row{
+  /* nota: regole specifiche sotto */
+}
+
+/* HOME ----------------------------------------------------------- */
+#homeScreen{ position:relative; padding-top: 10px; }
+
+/* Timbro CASO APERTO */
+.stamp{
+  position:absolute; z-index:3;
+  font-family: var(--mono); letter-spacing:.08em;
+  color: var(--stamp); border:2px solid var(--stamp);
+  border-radius:4px; padding:3px 8px; font-size:12px;
+  opacity:.88;
+}
+.stamp-open{ top:4px; right:2px; transform: rotate(6deg); }
+
+/* Emblema lente d'ingrandimento (storta = dilettante) */
+.hero-art{ height:172px; display:grid; place-items:center; margin: 2px 0 2px; }
+.detective-emblem{ display:grid; place-items:center; }
+.detective-mark{ width:132px; height:146px; overflow:visible; }
+.emblem-shadow{ fill:#000; opacity:.35; }
+.emblem-side{ fill: var(--emblem-side); }
+.emblem-face{ fill: var(--emblem); }
+.emblem-mark{ fill: var(--ink); }
+
+.home-intro{ text-align:center; margin-top:2px; }
+.eyebrow{ font-family: var(--mono); font-size:10px; font-weight:400; letter-spacing:.2em; color: var(--stamp); margin-bottom:10px; }
+.home-intro h1, .screen-title{
+  margin:0; font-family: var(--sans); font-weight:800;
+  font-size: clamp(34px, 9.5vw, 46px); line-height:.98; letter-spacing:-.045em;
+  color: var(--paper);
+}
+.home-intro h1 span, .screen-title span{ color: var(--hi); }
+.home-intro p, .screen-subtitle{ margin:11px 0 0; color:#b7ab8f; font-size:13px; line-height:1.5; }
+
+/* Carta: la scheda dei sospettati */
+.setup-card{
+  position:relative; margin-top:20px; padding:18px 16px 16px;
+  background: var(--paper); color: var(--paper-ink);
+  border:1px solid var(--paper-edge); border-radius: var(--radius);
+  box-shadow: 0 16px 34px rgba(0,0,0,.4), 0 2px 0 rgba(255,255,255,.04);
+}
+.setup-card::before{ /* angolo scheda piegato */
+  content:""; position:absolute; top:0; right:0; width:0; height:0;
+  border-width:0 20px 20px 0; border-style:solid;
+  border-color: transparent var(--ink) transparent transparent; opacity:.12;
+  border-radius:0 var(--radius) 0 0;
+}
+/* graffetta */
+.paperclip{ position:absolute; top:-9px; left:20px; width:16px; height:30px;
+  border:2.5px solid #9a8c6a; border-bottom:none; border-radius:8px 8px 0 0;
+  transform: rotate(-8deg); }
+.paperclip::after{ content:""; position:absolute; left:3px; top:6px; width:7px; height:20px;
+  border:2px solid #b4a884; border-bottom:none; border-radius:5px 5px 0 0; }
+
+.setup-heading{ display:flex; align-items:center; justify-content:space-between;
+  font-family: var(--mono); font-size:10px; letter-spacing:.12em; color: var(--paper-ink3); }
+.setup-heading span:last-child{ color: var(--paper-ink); font-size:11px; }
+
+.player-stepper{ display:flex; align-items:center; justify-content:center; gap:26px; margin:14px 0 15px; }
+.player-stepper strong{ font-family: var(--mono); font-size:30px; min-width:28px; text-align:center;
+  color: var(--paper-ink); }
+.step-button{ width:38px; height:38px; border:1px solid var(--paper-line); border-radius:9px;
+  background: var(--paper-2); color: var(--paper-ink2); font-size:21px; display:grid; place-items:center;
+  padding:0; transition: transform .15s, background .15s; }
+.step-button:disabled{ opacity:.35; cursor:default; }
+.step-button:active:not(:disabled){ transform: scale(.93); background:#e9ddc0; }
+
+.name-fields{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.name-input{ width:100%; min-width:0; border:1px solid var(--paper-edge); border-radius:6px;
+  background: var(--paper-3); color: var(--paper-ink); padding:11px 12px; font-size:13px; outline:none; }
+.name-input::placeholder{ color:#a99a78; }
+.name-input:focus{ border-color: var(--stamp); box-shadow:0 0 0 3px rgba(167,51,46,.12); }
+
+/* Pulsante principale: barra spazio da macchina da scrivere */
+.primary-button{
+  width:100%; min-height:52px; margin-top:15px; padding:0 18px;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  border:1px solid var(--key-edge); border-radius: 9px / 15px;
+  background: linear-gradient(var(--key-top), var(--key-bot));
+  color: var(--key-ink);
+  font-family: var(--mono); font-size:14px; letter-spacing:.1em;
+  box-shadow: 0 4px 0 var(--key-edge), inset 0 1px 0 #fffdf6;
+  transition: transform .09s, box-shadow .09s, filter .09s;
+}
+.primary-button:active{ transform: translateY(3px); box-shadow: 0 1px 0 var(--key-edge), inset 0 1px 0 #fffdf6; filter: brightness(.99); }
+.primary-button:disabled{ opacity:.6; }
+.button-icon{ font-family: var(--sans); font-size:17px; font-weight:700; }
+
+.home-footnote{ display:flex; justify-content:center; align-items:center; gap:8px;
+  margin:16px 0 4px; font-family: var(--mono); font-size:10px; letter-spacing:.06em; color:#8a7c5c; }
+.footnote-dot{ width:4px; height:4px; border-radius:50%; background: var(--stamp); }
+.footnote-separator{ color:#5a5240; }
+
+.app-footer{ display:flex; align-items:center; justify-content:space-between;
+  margin-top:auto; padding-top:18px;
+  font-family: var(--mono); font-size:9px; letter-spacing:.14em; color:#6a6048; }
+.footer-mark{ color:#b7a87f; border:1px solid #4a4030; border-radius:5px; padding:3px 6px; font-size:8px; }
+
+/* TURNO PRIVATO -------------------------------------------------- */
+.round-progress{ margin: 2px 0 20px; }
+.progress-copy{ display:flex; justify-content:space-between;
+  font-family: var(--mono); font-size:9px; letter-spacing:.1em; color:#9a8c6a; margin-bottom:9px; }
+.progress-copy b{ color: var(--paper); font-weight:400; }
+.progress-track{ height:4px; border-radius:9px; background:#3a3326; overflow:hidden; }
+.progress-track div{ height:100%; width:33%; border-radius:9px; background: var(--stamp); transition: width .25s; }
+
+.private-stage{
+  position:relative; overflow:hidden; min-height:360px;
+  padding:22px 18px; background: var(--paper); color: var(--paper-ink);
+  border:1px solid var(--paper-edge); border-radius: var(--radius);
+  box-shadow: 0 16px 34px rgba(0,0,0,.4);
+}
+.private-seal{ width:40px; height:40px; display:grid; place-items:center; margin-bottom:22px;
+  border:1px solid var(--stamp); border-radius:10px; background: rgba(167,51,46,.06);
+  color: var(--stamp); font-size:18px; }
+.private-stage h2{ margin:0; font-family: var(--sans); font-weight:800;
+  font-size:36px; line-height:1.03; letter-spacing:-.04em; color: var(--paper-ink); }
+.private-stage h2 span{ color: var(--stamp); }
+.turn-helper{ margin:12px 0 0; color: var(--paper-ink2); font-size:12px; line-height:1.5; }
+
+.question-area{ margin-top:22px; }
+.question-label, .answer-label{ font-family: var(--mono); font-size:9px; letter-spacing:.14em; color: var(--stamp); }
+.question-text{ margin:11px 0 22px; font-family: var(--sans); font-size:23px; font-weight:700;
+  line-height:1.22; letter-spacing:-.025em; color: var(--paper-ink); }
+.answer-label{ display:block; color: var(--paper-ink3); margin-bottom:8px; }
+.question-area input{ width:100%; padding:14px; border:1px solid var(--paper-edge); border-radius:8px;
+  background: var(--paper-3); color: var(--paper-ink); font-family: var(--mono); font-size:24px;
+  outline:none; appearance:textfield; }
+.question-area input::placeholder{ color:#bcae8c; }
+.question-area input:focus{ border-color: var(--stamp); box-shadow:0 0 0 3px rgba(167,51,46,.12); }
+.question-area input::-webkit-inner-spin-button,
+.question-area input::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0; }
+
+.privacy-note{ text-align:center; margin:15px 0; font-family: var(--mono);
+  font-size:10px; letter-spacing:.06em; color:#8a7c5c; }
+.privacy-note span{ color: var(--stamp); margin-right:4px; }
+
+.hidden{ display:none !important; }
+
+/* RIEPILOGO / DEPOSIZIONI ---------------------------------------- */
+.screen-title{ font-size: clamp(30px, 8.5vw, 40px); }
+.common-question{ margin:20px 0 14px; padding:15px;
+  border:1px solid var(--hi); border-radius:9px; background: var(--hi-bg); }
+.common-question .question-label{ color: var(--hi-ink); }
+.common-question p{ margin:9px 0 0; font-family: var(--sans); font-size:17px; font-weight:600;
+  line-height:1.32; letter-spacing:-.02em; color: var(--paper-ink); }
+
+.answers-list{ display:grid; gap:7px; margin:0 0 16px; }
+.answer-row{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:12px 14px; border:1px solid var(--paper-edge); border-radius:8px; background: var(--paper-2); }
+.answer-name{ font-size:12px; font-weight:600; color: var(--paper-ink); }
+.answer-row strong{ font-family: var(--mono); font-size:18px; color: var(--stamp); }
+
+.quiet-button{ width:100%; min-height:42px; margin-top:6px; border:0; background:transparent;
+  font-family: var(--mono); font-size:11px; letter-spacing:.06em; color:#9a8c6a; }
+.quiet-button:active{ color: var(--paper); }
+
+/* VOTAZIONE ------------------------------------------------------ */
+.vote-options{ display:grid; gap:7px; margin:20px 0 13px; }
+.vote-option{ display:flex; align-items:center; gap:12px; width:100%; min-height:58px; padding:11px;
+  border:1px solid var(--paper-edge); border-radius:9px; background: var(--paper-2);
+  color: var(--paper-ink); text-align:left; }
+.vote-option.selected{ border:2px solid var(--stamp); background: var(--stamp-bg); }
+.avatar{ width:36px; height:36px; display:grid; place-items:center; flex-shrink:0;
+  border:1px solid var(--paper-line); border-radius:9px; background:#efe4c8;
+  font-family: var(--mono); font-size:14px; color: var(--paper-ink); }
+.vote-option.selected .avatar{ border-color: var(--stamp); background:#efd9d4; color: var(--stamp-ink); }
+.vote-option strong{ font-size:13px; font-weight:600; }
+.vote-option .check{ margin-left:auto; color: var(--stamp); font-size:19px; }
+
+.vote-confirm-box{ margin-bottom:12px; padding:13px; border:1px solid var(--stamp);
+  border-radius:9px; background: var(--stamp-bg); }
+.vote-confirm-box p{ margin:0; font-size:13px; line-height:1.5; color: var(--paper-ink); }
+.vote-confirm-box p strong{ color: var(--stamp-ink); }
+.vote-confirm-box .quiet-button{ margin-top:8px; }
+
+/* VERDETTO ------------------------------------------------------- */
+#resultScreen{ position:relative; text-align:center; }
+.result-medallion{ width:76px; height:76px; display:grid; place-items:center; margin:12px auto 20px;
+  border:2.5px solid var(--stamp); border-radius:50%; background: rgba(167,51,46,.06);
+  color: var(--stamp); font-size:34px; transform: rotate(-7deg); }
+.result-medallion.is-correct{ color: var(--green); border-color: var(--green); }
+.result-medallion.is-wrong{ color: var(--danger); border-color: var(--danger); }
+.result-eyebrow{ text-align:center; }
+.result-title{ margin:0; font-family: var(--sans); font-weight:800; font-size:44px;
+  line-height:1; letter-spacing:-.045em; color: var(--paper); }
+.result-text{ max-width:320px; margin:12px auto 20px; color:#b7ab8f; font-size:13px; line-height:1.6; }
+.reveal-card{ padding:16px; border:1.5px dashed var(--paper-line); border-radius:9px;
+  background: var(--paper); color: var(--paper-ink); }
+.reveal-card .question-label{ color: var(--paper-ink3); }
+.reveal-card strong{ display:block; margin-top:7px; font-family: var(--sans); font-weight:800;
+  font-size:23px; letter-spacing:-.03em; color: var(--stamp); }
+
+/* ---------- Responsività ---------- */
+@media (max-height: 740px){
+  .hero-art{ height:124px; }
+  .detective-mark{ width:100px; height:110px; }
+  .home-intro h1{ font-size:34px; }
+  .setup-card{ margin-top:14px; padding:14px; }
+  .player-stepper{ margin:10px 0 11px; }
+  .private-stage{ min-height:320px; }
+}
+@media (min-width: 440px){
+  .app-shell{ padding-left:22px; padding-right:22px; }
+}
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ animation:none !important; transition:none !important; }
+}

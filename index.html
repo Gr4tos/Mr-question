@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#15120d">
+  <meta name="description" content="Mr Question? Il party game dell'impostore.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mr Question?">
+  <link rel="stylesheet" href="style.css">
+  <title>Mr Question?</title>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <img id="brandLogo" class="brand-logo logo-missing" src="assets/images/mr-question-logo.png" alt="Mr Question?" onerror="this.classList.add('logo-missing')">
+        <div class="brand-fallback"><span class="case-no">CASO N° <b id="caseNumber">0037</b></span><span class="brand-name">MR QUESTION<span class="brand-mark">?</span></span></div>
+      </div>
+      <div class="connection-pill"><span class="status-dot"></span><span id="connectionStatus">PRONTO</span></div>
+    </header>
+
+    <section id="homeScreen" class="screen active">
+      <span class="stamp stamp-open" aria-hidden="true">CASO APERTO</span>
+      <div class="hero-art" aria-hidden="true">
+        <div class="detective-emblem">
+          <svg class="detective-mark" viewBox="-6 -4 214 236" focusable="false">
+            <defs>
+              <g id="mqSilhouette">
+                <path d="M62 62 C62 44 66 26 72 19 C78 13 90 15 100 19 C110 15 122 13 128 19 C134 26 138 44 138 62 Z"/>
+                <path d="M20 70 C11 66 13 59 24 60 C40 57 64 55 100 55 C136 55 160 57 176 60 C187 59 189 66 180 70 C160 77 136 80 100 80 C64 80 40 77 20 70 Z"/>
+                <path d="M62 76 L138 76 L138 120 L162 107 L152 150 C178 154 196 164 198 182 L198 200 L2 200 L2 182 C4 164 22 154 48 150 L38 107 L62 120 Z"/>
+              </g>
+            </defs>
+            <ellipse class="emblem-shadow" cx="104" cy="214" rx="104" ry="9"/>
+            <use class="emblem-side" href="#mqSilhouette" transform="translate(4.2,7)"/>
+            <use class="emblem-side" href="#mqSilhouette" transform="translate(3,5)"/>
+            <use class="emblem-side" href="#mqSilhouette" transform="translate(1.8,3)"/>
+            <use class="emblem-side" href="#mqSilhouette" transform="translate(0.6,1)"/>
+            <use class="emblem-face" href="#mqSilhouette"/>
+            <g class="emblem-mark">
+              <path d="M73 94 C73 72 87 62 102 62 C120 62 131 74 131 90 C131 105 121 112 114 118 C110 122 110 126 110 133 L90 133 C90 121 93 114 101 107 C107 101 111 97 111 90 C111 83 107 79 101 79 C95 79 92 85 92 94 Z"/>
+              <rect x="89" y="143" width="21" height="21" rx="3"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+      <div class="home-intro"><div class="eyebrow">FASCICOLO RISERVATO</div><h1>Il sospetto<br><span>è tra voi.</span></h1><p>Osserva le risposte. Trova l'intruso.</p></div>
+      <div class="setup-card">
+        <span class="paperclip" aria-hidden="true"></span>
+        <div class="setup-heading"><span>SOSPETTATI SCHEDATI</span><span id="playerCountLabel">3 giocatori</span></div>
+        <div class="player-stepper"><button id="minusPlayers" class="step-button" aria-label="Meno giocatori">−</button><strong id="playerCount">3</strong><button id="plusPlayers" class="step-button" aria-label="Più giocatori">+</button></div>
+        <div id="nameFields" class="name-fields"></div>
+        <button id="startGame" class="primary-button"><span class="button-icon">→</span><span id="startLabel">APRI LE INDAGINI</span></button>
+      </div>
+      <div class="home-footnote"><span class="footnote-dot"></span><span>3–7 SOSPETTATI</span><span class="footnote-separator">·</span><span>PARTITA LOCALE</span></div>
+    </section>
+
+    <section id="turnScreen" class="screen">
+      <div class="round-progress"><div class="progress-copy"><span>TURNO <b id="turnStep">1 / 3</b></span><span>PASSA IL FASCICOLO</span></div><div class="progress-track"><div id="progressFill"></div></div></div>
+      <div class="private-stage"><div class="private-seal"><span>❋</span></div><div class="eyebrow">SOLO PER TE</div><h2>Il turno di<br><span id="currentPlayerName">Dani</span></h2><p class="turn-helper">Assicurati che nessun altro guardi.</p><button id="showQuestion" class="primary-button"><span class="button-icon">↗</span><span>Apri la scheda</span></button>
+        <div id="questionArea" class="question-area hidden"><div class="question-label">LA TUA DOMANDA</div><p id="questionText" class="question-text"></p><label class="answer-label" for="answerInput">LA TUA RISPOSTA</label><input id="answerInput" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off"><button id="confirmAnswer" class="primary-button"><span class="button-icon">✓</span><span>Metti a verbale</span></button></div>
+      </div><div class="privacy-note"><span>◉</span> La tua risposta resta segreta</div>
+    </section>
+
+    <section id="voteScreen" class="screen"><div class="eyebrow">TUTTI HANNO DEPOSTO</div><h1 class="screen-title">Confrontate<br><span>le deposizioni.</span></h1><div class="common-question"><div class="question-label">LA DOMANDA UFFICIALE</div><p id="commonQuestionText"></p></div><div id="answersList" class="answers-list"></div><button id="goVote" class="primary-button"><span class="button-icon">↗</span><span>Alle votazioni</span></button><button id="restartHome" class="quiet-button">Archivia il caso</button></section>
+
+    <section id="ballotScreen" class="screen"><div class="eyebrow">VERDETTO POPOLARE</div><h1 class="screen-title">Chi vi<br><span>insospettisce?</span></h1><p class="screen-subtitle">Indicate chi credete sia l’impostore.</p><div id="voteOptions" class="vote-options"></div><div id="voteConfirmBox" class="vote-confirm-box hidden"><p id="voteConfirmText"></p><button id="confirmVote" class="primary-button"><span class="button-icon">✓</span><span>Firma l’accusa</span></button><button id="changeVote" class="quiet-button">Cambia scelta</button></div><button id="backToAnswers" class="quiet-button">Torna alle deposizioni</button></section>
+
+    <section id="resultScreen" class="screen"><div id="resultIcon" class="result-medallion">✦</div><div id="resultEyebrow" class="eyebrow result-eyebrow">VERDETTO</div><h1 id="resultTitle" class="result-title">Beccato.</h1><p id="resultText" class="result-text"></p><div class="reveal-card"><div class="question-label">L’IMPOSTORE ERA</div><strong id="impostorReveal"></strong></div><button id="rematch" class="primary-button"><span class="button-icon">↻</span><span>Riapri il caso</span></button><button id="newGame" class="quiet-button">Nuovo fascicolo</button></section>
+
+    <footer class="app-footer"><span class="footer-mark">MRQ</span><span>ARCHIVIO RISERVATO · MRQ</span></footer>
+  </main>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
