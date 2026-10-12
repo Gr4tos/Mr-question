@@ -14,7 +14,7 @@ Repository: https://github.com/Gr4tos/Mr-question (branch `main`; i file stanno 
 - `style.css` — unico foglio di stile, direzione "dossier" (vedi sotto); i font sono caricati in locale con `@font-face` (nessun import da Google)
 - `app.js` — tutta la logica, nessun framework
 - `config.js` — `window.MRQ_CONFIG = { grokEndpoint: "" }` (vuoto)
-- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v7` (in `ASSETS` ci sono anche i due font)
+- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v8` (in `ASSETS` ci sono anche i due font)
 - `manifest.webmanifest`, `icon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`
 - `assets/fonts/` — `inter-latin.woff2` (Inter variabile, pesi 400–800, sottoinsieme latin) e `special-elite-latin.woff2`, più le licenze: `OFL-Inter.txt` (SIL OFL 1.1) e `LICENSE-SpecialElite-Apache-2.0.txt` (Special Elite è sotto Apache 2.0, non OFL). Le licenze non sono in `ASSETS`, di proposito.
 - `assets/images/mr-question-logo.png` — in realtà è un JPEG opaco rinominato; nascosto di default (classe `logo-missing`)
@@ -23,7 +23,7 @@ Non esiste una cartella `worker/`: il Cloudflare Worker per Grok non è nel repo
 
 ## Flusso di gioco (da preservare)
 
-1. Home: stepper 3–7 giocatori, nomi (devono essere diversi), "Apri le indagini".
+1. Home: stepper 3–7 giocatori, nomi facoltativi (campi vuoti con placeholder "Sospettato N"; un campo vuoto usa il placeholder come nome; i nomi effettivi devono essere diversi), "Apri le indagini". Il testo scritto nei campi sta in `state.inputs`, i nomi effettivi del round in `state.names`.
 2. Turni privati: nome del giocatore, "Apri la scheda" rivela la domanda, risposta numerica, "Metti a verbale". Il telefono passa di mano.
 3. Riepilogo pubblico: domanda comune + tutte le risposte.
 4. Votazione con conferma esplicita.
@@ -37,7 +37,7 @@ Regole fondamentali:
 
 ## Dettagli tecnici di app.js
 
-- `$ = id => document.getElementById(id)`; usa 34 ID dell'HTML via `$('...')`, più `homeError`, `answerError`, `resultError` (messaggi di errore inline, usati da `showError()`/`clearErrors()`). **Non rinominarli** senza aggiornare tutti i riferimenti. Non si usa più `alert()`.
+- `$ = id => document.getElementById(id)`; usa 34 ID dell'HTML via `$('...')` (tra cui `caseStamp`, il timbro), più `homeError`, `answerError`, `resultError` (messaggi di errore inline, usati da `showError()`/`clearErrors()`). **Non rinominarli** senza aggiornare tutti i riferimenti. Non si usa più `alert()`.
 - 50 coppie di domande integrate in `BUILTIN` (formato `[comune, impostore, risp, risp, categoria]`).
 - `localStorage`: `mq_bank` (archivio domande), `mq_used` (ID già usati), `mq_last` (ultimo impostore).
 - `fetchLiveQuestions()` chiama `POST {grokEndpoint}/generate` solo se online e se l'endpoint non è vuoto; con endpoint vuoto il ramo non parte mai. Fallback automatico sulle domande locali.
@@ -61,6 +61,8 @@ Pulsante principale `.primary-button`: barra spazio da macchina da scrivere, bei
 
 Emblema Home: sagoma di detective (cappello a falda, colletto del trench, spalle) gialla con punto di domanda nero al posto del viso, con spessore "cartoncino" (copie sfalsate in `--emblem-side`) e ombra piatta. È definita come `<g id="mqSilhouette">` dentro `index.html`. La stessa sagoma è l'icona dell'app.
 
+Home e topbar: nella topbar (su tutte le schermate) a sinistra "CASO N° 0037", a destra il timbro rosso inclinato `#caseStamp`: "CASO APERTO" ovunque, "CASO CHIUSO" sulla schermata del verdetto (lo cambia `showScreen()`; con "Riapri il caso" e "Nuovo fascicolo" torna "CASO APERTO"). Non c'è più l'indicatore di connessione: la logica online/offline resta solo in `startGame()`/`fetchLiveQuestions()` via `navigator.onLine`. Nella Home, il blocco sagoma + "MR QUESTION?" (`--mono`, 28px, "?" rosso timbro) + scheda è centrato in verticale; la graffetta sta sul bordo superiore destro della scheda e non deve toccare nessun testo (controllato a 375×667 e 390×844). Nessun footer, nessun titolo/slogan, nessuna riga sotto la scheda. Nei pulsanti principali l'icona sta a destra del testo; "Apri le indagini" ha l'icona SVG del tasto Invio (a tratto, `currentColor`).
+
 Da evitare (richiesta esplicita dell'utente): emoji come icone, estetica generica "fatta dall'AI", glow/neon/gradienti decorativi messi a caso, card standard, illustrazioni che non servono al prodotto. Le illustrazioni si disegnano in SVG con forme geometriche nette (le sagome organiche "a mano libera" sono venute male).
 
 ## Regole di lavoro
@@ -83,9 +85,9 @@ Da evitare (richiesta esplicita dell'utente): emoji come icone, estetica generic
 
 ## Problemi noti / da fare
 
-1. ~~Bug indicatore online/offline~~ — RISOLTO: `setStatus()` ora mette `is-offline` su `.connection-pill`.
+1. ~~Bug indicatore online/offline~~ — RISOLTO rimuovendo l'indicatore (pill e `setStatus()` non esistono più).
 2. ~~Font non offline~~ — RISOLTO: font in `assets/fonts/`, `@font-face` con `font-display: swap`, file in `ASSETS` (cache v7).
-3. Set di illustrazioni SVG da completare nello stesso stile della sagoma: sigillo del turno privato (ora un carattere `❋`), medaglione del verdetto (ora `✓`/`×`), graffetta.
+3. Set di illustrazioni SVG da completare nello stesso stile della sagoma: sigillo del turno privato (ora un carattere `❋`), medaglione del verdetto (ora `✓`/`×`), graffetta (ora disegnata in CSS).
 4. ~~Errori con `alert()`~~ — RISOLTO: nomi duplicati, risposta non numerica e "nessuna domanda" usano la fascetta `.inline-error` (rosso timbro, tratteggiata).
 5. Il README non corrisponde all'app (Archivio/import JSON assente). Decidere se implementare l'Archivio o correggere il README.
 6. Logo JPEG opaco: sostituire con un PNG/SVG trasparente o rimuoverlo.
