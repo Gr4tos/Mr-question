@@ -75,7 +75,7 @@ button{ touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color
 
 /* ---------- Topbar: intestazione fascicolo ---------- */
 .topbar{
-  display:flex; align-items:center; gap:12px;
+  display:flex; align-items:flex-start; gap:12px;
   padding: 2px 2px 12px; margin-bottom: 4px;
   border-bottom: 1px dashed #4a4030;
 }
@@ -108,14 +108,36 @@ button{ touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color
 #homeScreen.active{ display:flex; flex-direction:column; justify-content:center; padding-top:6px; }
 
 /* Timbro CASO APERTO (nella topbar) */
+.topbar-right{ margin-left:auto; padding-top:6px; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
 .stamp{
-  margin-left:auto;
   font-family: var(--mono); letter-spacing:.08em;
   color: var(--stamp); border:2px solid var(--stamp);
   border-radius:4px; padding:3px 8px; font-size:12px;
   opacity:.88;
 }
 .stamp-open{ transform: rotate(6deg); }
+
+/* Uscita dalla partita: tastino sotto il timbro + conferma */
+.exit-button{ position:relative; width:34px; height:28px; padding:0; display:grid; place-items:center;
+  border:1px solid #4a4030; border-radius:4px; background:transparent; color:#9a8c6a; }
+.exit-button::after{ content:""; position:absolute; inset:-9px -9px -9px -10px; }
+.exit-button:active{ color: var(--paper); border-color:#6a5d45; }
+.exit-button svg{ width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8;
+  stroke-linecap:round; stroke-linejoin:round; }
+
+.exit-dialog{ position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+  padding: calc(18px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  background: rgba(10,8,5,.97); animation: screen-in .2s cubic-bezier(.2,.7,.2,1); }
+.exit-card{ width:100%; max-width:380px; padding:24px 18px 12px; text-align:center;
+  background: var(--paper); color: var(--paper-ink);
+  border:1px solid var(--paper-edge); border-radius: var(--radius);
+  box-shadow: 0 16px 34px rgba(0,0,0,.5); }
+.exit-question{ margin:0; font-family: var(--sans); font-weight:800; font-size:22px; line-height:1.15;
+  letter-spacing:-.03em; color: var(--paper-ink); }
+.exit-note{ margin:8px 0 0; font-size:12px; line-height:1.5; color: var(--paper-ink2); }
+.exit-card .primary-button{ margin-top:22px; }
+.exit-card .exit-confirm{ min-height:44px; margin-top:8px; color: var(--paper-ink2); }
+.exit-card .exit-confirm:active{ color: var(--stamp); }
 
 /* Emblema lente d'ingrandimento (storta = dilettante) */
 .hero-art{ height:172px; display:grid; place-items:center; margin: 2px 0 2px; }

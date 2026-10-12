@@ -21,7 +21,10 @@
         <img id="brandLogo" class="brand-logo logo-missing" src="assets/images/mr-question-logo.png" alt="Mr Question?" onerror="this.classList.add('logo-missing')">
         <div class="brand-fallback"><span class="case-no">CASO N° <b id="caseNumber">0037</b></span></div>
       </div>
-      <span id="caseStamp" class="stamp stamp-open" aria-hidden="true">CASO APERTO</span>
+      <div class="topbar-right">
+        <span id="caseStamp" class="stamp stamp-open" aria-hidden="true">CASO APERTO</span>
+        <button id="exitButton" class="exit-button hidden" type="button" aria-label="Torna al menù principale"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg></button>
+      </div>
     </header>
 
     <section id="homeScreen" class="screen active">
@@ -72,6 +75,15 @@
 
     <section id="resultScreen" class="screen"><div id="resultIcon" class="result-medallion">✦</div><div id="resultEyebrow" class="eyebrow result-eyebrow">VERDETTO</div><h1 id="resultTitle" class="result-title">Beccato.</h1><p id="resultText" class="result-text"></p><div class="reveal-card"><div class="question-label">L’IMPOSTORE ERA</div><strong id="impostorReveal"></strong></div><p id="resultError" class="inline-error hidden" role="alert"></p><button id="rematch" class="primary-button"><span>Riapri il caso</span><span class="button-icon">↻</span></button><button id="newGame" class="quiet-button">Nuovo fascicolo</button></section>
   </main>
+
+  <div id="exitDialog" class="exit-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="exitQuestion">
+    <div class="exit-card">
+      <p id="exitQuestion" class="exit-question">Vuoi tornare al menù principale?</p>
+      <p class="exit-note">La partita in corso andrà persa.</p>
+      <button id="exitStay" class="primary-button" type="button"><span>No, continua</span></button>
+      <button id="exitConfirm" class="quiet-button exit-confirm" type="button">Sì, torna al menù</button>
+    </div>
+  </div>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
