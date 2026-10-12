@@ -55,6 +55,7 @@
         <div class="setup-heading"><span>SOSPETTATI SCHEDATI</span><span id="playerCountLabel">3 giocatori</span></div>
         <div class="player-stepper"><button id="minusPlayers" class="step-button" aria-label="Meno giocatori">−</button><strong id="playerCount">3</strong><button id="plusPlayers" class="step-button" aria-label="Più giocatori">+</button></div>
         <div id="nameFields" class="name-fields"></div>
+        <p id="homeError" class="inline-error hidden" role="alert"></p>
         <button id="startGame" class="primary-button"><span class="button-icon">→</span><span id="startLabel">APRI LE INDAGINI</span></button>
       </div>
       <div class="home-footnote"><span class="footnote-dot"></span><span>3–7 SOSPETTATI</span><span class="footnote-separator">·</span><span>PARTITA LOCALE</span></div>
@@ -63,7 +64,7 @@
     <section id="turnScreen" class="screen">
       <div class="round-progress"><div class="progress-copy"><span>TURNO <b id="turnStep">1 / 3</b></span><span>PASSA IL FASCICOLO</span></div><div class="progress-track"><div id="progressFill"></div></div></div>
       <div class="private-stage"><div class="private-seal"><span>❋</span></div><div class="eyebrow">SOLO PER TE</div><h2>Il turno di<br><span id="currentPlayerName">Dani</span></h2><p class="turn-helper">Assicurati che nessun altro guardi.</p><button id="showQuestion" class="primary-button"><span class="button-icon">↗</span><span>Apri la scheda</span></button>
-        <div id="questionArea" class="question-area hidden"><div class="question-label">LA TUA DOMANDA</div><p id="questionText" class="question-text"></p><label class="answer-label" for="answerInput">LA TUA RISPOSTA</label><input id="answerInput" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off"><button id="confirmAnswer" class="primary-button"><span class="button-icon">✓</span><span>Metti a verbale</span></button></div>
+        <div id="questionArea" class="question-area hidden"><div class="question-label">LA TUA DOMANDA</div><p id="questionText" class="question-text"></p><label class="answer-label" for="answerInput">LA TUA RISPOSTA</label><input id="answerInput" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off"><p id="answerError" class="inline-error hidden" role="alert"></p><button id="confirmAnswer" class="primary-button"><span class="button-icon">✓</span><span>Metti a verbale</span></button></div>
       </div><div class="privacy-note"><span>◉</span> La tua risposta resta segreta</div>
     </section>
 
@@ -71,7 +72,7 @@
 
     <section id="ballotScreen" class="screen"><div class="eyebrow">VERDETTO POPOLARE</div><h1 class="screen-title">Chi vi<br><span>insospettisce?</span></h1><p class="screen-subtitle">Indicate chi credete sia l’impostore.</p><div id="voteOptions" class="vote-options"></div><div id="voteConfirmBox" class="vote-confirm-box hidden"><p id="voteConfirmText"></p><button id="confirmVote" class="primary-button"><span class="button-icon">✓</span><span>Firma l’accusa</span></button><button id="changeVote" class="quiet-button">Cambia scelta</button></div><button id="backToAnswers" class="quiet-button">Torna alle deposizioni</button></section>
 
-    <section id="resultScreen" class="screen"><div id="resultIcon" class="result-medallion">✦</div><div id="resultEyebrow" class="eyebrow result-eyebrow">VERDETTO</div><h1 id="resultTitle" class="result-title">Beccato.</h1><p id="resultText" class="result-text"></p><div class="reveal-card"><div class="question-label">L’IMPOSTORE ERA</div><strong id="impostorReveal"></strong></div><button id="rematch" class="primary-button"><span class="button-icon">↻</span><span>Riapri il caso</span></button><button id="newGame" class="quiet-button">Nuovo fascicolo</button></section>
+    <section id="resultScreen" class="screen"><div id="resultIcon" class="result-medallion">✦</div><div id="resultEyebrow" class="eyebrow result-eyebrow">VERDETTO</div><h1 id="resultTitle" class="result-title">Beccato.</h1><p id="resultText" class="result-text"></p><div class="reveal-card"><div class="question-label">L’IMPOSTORE ERA</div><strong id="impostorReveal"></strong></div><p id="resultError" class="inline-error hidden" role="alert"></p><button id="rematch" class="primary-button"><span class="button-icon">↻</span><span>Riapri il caso</span></button><button id="newGame" class="quiet-button">Nuovo fascicolo</button></section>
 
     <footer class="app-footer"><span class="footer-mark">MRQ</span><span>ARCHIVIO RISERVATO · MRQ</span></footer>
   </main>

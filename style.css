@@ -4,7 +4,20 @@
    Rosso timbro = ufficiale/stati. Giallo evidenziatore = indizi/azione.
    Mono (Courier) = etichette/documenti. Sans = domande/risposte/nomi.
    ========================================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Special+Elite&display=swap');
+@font-face{
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('assets/fonts/inter-latin.woff2') format('woff2');
+}
+@font-face{
+  font-family: 'Special Elite';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('assets/fonts/special-elite-latin.woff2') format('woff2');
+}
 
 :root{
   color-scheme: dark;
@@ -78,6 +91,11 @@ button{ touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color
   margin-left:auto; display:flex; align-items:center; gap:6px;
   padding:5px 10px; border:1px solid #4a4030; border-radius:4px;
   font-family: var(--mono); font-size:9px; letter-spacing:.12em; color:#9a8c6a;
+}
+.inline-error{
+  margin:10px 0 0; padding:8px 10px; border:1px dashed var(--stamp); border-radius:4px;
+  background: var(--stamp-bg); color: var(--stamp-ink);
+  font-family: var(--mono); font-size:11px; letter-spacing:.04em; line-height:1.4;
 }
 .status-dot{ width:6px; height:6px; border-radius:50%; background: var(--green); }
 .connection-pill.is-offline{ color: var(--stamp); border-color:#5a2d28; }

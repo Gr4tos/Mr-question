@@ -6,16 +6,17 @@ Rispondi sempre in italiano. L'utente non è uno sviluppatore esperto: spiega co
 
 Party game investigativo con impostore, 3–7 giocatori, mobile-first (Safari iPhone in primis). Web app statica (HTML/CSS/JS, nessun build step, nessuna dipendenza npm) pubblicata su GitHub Pages dal branch `main`, cartella root.
 
-Repository: https://github.com/Gr4tos/mr-question
+Repository: https://github.com/Gr4tos/Mr-question (branch `main`; i file stanno direttamente nella root del repo, nessuna sottocartella)
 
 ## Struttura reale (verificata)
 
 - `index.html` — tutte le schermate in un'unica pagina (`homeScreen`, `turnScreen`, `voteScreen`, `ballotScreen`, `resultScreen`)
-- `style.css` — unico foglio di stile, direzione "dossier" (vedi sotto)
+- `style.css` — unico foglio di stile, direzione "dossier" (vedi sotto); i font sono caricati in locale con `@font-face` (nessun import da Google)
 - `app.js` — tutta la logica, nessun framework
 - `config.js` — `window.MRQ_CONFIG = { grokEndpoint: "" }` (vuoto)
-- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v6`
+- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v7` (in `ASSETS` ci sono anche i due font)
 - `manifest.webmanifest`, `icon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`
+- `assets/fonts/` — `inter-latin.woff2` (Inter variabile, pesi 400–800, sottoinsieme latin) e `special-elite-latin.woff2`, più le licenze: `OFL-Inter.txt` (SIL OFL 1.1) e `LICENSE-SpecialElite-Apache-2.0.txt` (Special Elite è sotto Apache 2.0, non OFL). Le licenze non sono in `ASSETS`, di proposito.
 - `assets/images/mr-question-logo.png` — in realtà è un JPEG opaco rinominato; nascosto di default (classe `logo-missing`)
 
 Non esiste una cartella `worker/`: il Cloudflare Worker per Grok non è nel repository.
@@ -36,7 +37,7 @@ Regole fondamentali:
 
 ## Dettagli tecnici di app.js
 
-- `$ = id => document.getElementById(id)`; usa 34 ID dell'HTML. **Non rinominarli** senza aggiornare tutti i riferimenti.
+- `$ = id => document.getElementById(id)`; usa 34 ID dell'HTML via `$('...')`, più `homeError`, `answerError`, `resultError` (messaggi di errore inline, usati da `showError()`/`clearErrors()`). **Non rinominarli** senza aggiornare tutti i riferimenti. Non si usa più `alert()`.
 - 50 coppie di domande integrate in `BUILTIN` (formato `[comune, impostore, risp, risp, categoria]`).
 - `localStorage`: `mq_bank` (archivio domande), `mq_used` (ID già usati), `mq_last` (ultimo impostore).
 - `fetchLiveQuestions()` chiama `POST {grokEndpoint}/generate` solo se online e se l'endpoint non è vuoto; con endpoint vuoto il ramo non parte mai. Fallback automatico sulle domande locali.
@@ -82,10 +83,10 @@ Da evitare (richiesta esplicita dell'utente): emoji come icone, estetica generic
 
 ## Problemi noti / da fare
 
-1. **Bug indicatore online/offline**: `setStatus()` mette la classe `is-offline` sullo `<span id="connectionStatus">`, ma il CSS la cerca su `.connection-pill`. Lo stato offline non cambia colore.
-2. **Font non offline**: `style.css` importa Inter e Special Elite da Google Fonts; il service worker non li mette in cache. Da incorporare in locale (es. `assets/fonts/`, `@font-face` con `font-display: swap`) e aggiungerli ad `ASSETS`.
+1. ~~Bug indicatore online/offline~~ — RISOLTO: `setStatus()` ora mette `is-offline` su `.connection-pill`.
+2. ~~Font non offline~~ — RISOLTO: font in `assets/fonts/`, `@font-face` con `font-display: swap`, file in `ASSETS` (cache v7).
 3. Set di illustrazioni SVG da completare nello stesso stile della sagoma: sigillo del turno privato (ora un carattere `❋`), medaglione del verdetto (ora `✓`/`×`), graffetta.
-4. Errori mostrati con `alert()` (nomi duplicati, risposta non numerica): sostituirli con messaggi inline nello stile dossier.
+4. ~~Errori con `alert()`~~ — RISOLTO: nomi duplicati, risposta non numerica e "nessuna domanda" usano la fascetta `.inline-error` (rosso timbro, tratteggiata).
 5. Il README non corrisponde all'app (Archivio/import JSON assente). Decidere se implementare l'Archivio o correggere il README.
 6. Logo JPEG opaco: sostituire con un PNG/SVG trasparente o rimuoverlo.
 
