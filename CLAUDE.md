@@ -18,7 +18,7 @@ Repository: https://github.com/Gr4tos/Mr-question (branch `main`; i file stanno 
 - `assets/vendor/firebase/` — SDK Firebase 13.0.0 modulare (`firebase-app.js`, `firebase-auth.js`, `firebase-database.js`) scaricato da gstatic con gli import interni riscritti in relativi. Non è in `ASSETS` (si salva da solo in cache al primo uso del party online)
 - `tests/` — script di test, mai serviti all'app (vedi "Test")
 - `config.js` — `window.MRQ_CONFIG = { grokEndpoint: "" }` (vuoto)
-- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v12` (in `ASSETS`: shell, `online.js` e i due font; le richieste a siti diversi dal nostro, cioè tutto il traffico Firebase, non passano mai dalla cache)
+- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v13` (in `ASSETS`: shell, `online.js` e i due font; le richieste a siti diversi dal nostro, cioè tutto il traffico Firebase, non passano mai dalla cache)
 - `manifest.webmanifest`, `icon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`
 - `assets/fonts/` — `inter-latin.woff2` (Inter variabile, pesi 400–800, sottoinsieme latin) e `special-elite-latin.woff2`, più le licenze: `OFL-Inter.txt` (SIL OFL 1.1) e `LICENSE-SpecialElite-Apache-2.0.txt` (Special Elite è sotto Apache 2.0, non OFL). Le licenze non sono in `ASSETS`, di proposito.
 - `assets/images/mr-question-logo.png` — in realtà è un JPEG opaco rinominato; nascosto di default (classe `logo-missing`)
