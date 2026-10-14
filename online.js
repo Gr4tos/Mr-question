@@ -34,7 +34,7 @@ let app = null, auth = null, db = null, uid = null, offset = 0;
 let S = null;                 // sessione: { code, seat, name }
 let D = {};                   // dati ricevuti dai listener
 let unsubs = [], gated = {}, gatedRetry = {}, hostUnsub = null;
-let ticker = null, renderQueued = false, hostRetry = 0, fewTimer = null, fewDeadline = null;
+let ticker = null, renderQueued = false, hostRetry = 0, fewTimer = null, fewDeadline = null, fewLow = false;
 let connected = true, busy = false, claiming = false, leaving = false, lastFail = 0;
 let curScreen = null;
 const ui = { vote: null, optKey: '', turnRound: null };
@@ -280,7 +280,7 @@ const roundConnected = () => roundSeats().filter(s => D.players[s] && D.players[
 // ---------- meno di 3 collegati durante il round ----------
 // La scadenza (45 s) parte da quando i collegati sono scesi sotto 3: cioe' dalla (N-2)-esima disconnessione tra i posti del round.
 function computeFewDeadline() {
-  if (!D.meta || D.meta.phase === 'lobby') return null;
+  if (!D.meta || D.meta.phase === 'lobby' || D.meta.phase === 'result') return null;
   const seats = roundSeats();
   if (seats.length < MIN_PLAYERS || roundConnected().length >= MIN_PLAYERS) return null;
   const times = seats.filter(s => !(D.players[s] && D.players[s].connected === true))
@@ -292,9 +292,16 @@ function paintFew() {
   if (fewDeadline == null) return;
   $('fewCount').textContent = `${Math.max(0, Math.ceil((fewDeadline - now()) / 1000))} s`;
 }
+const FEW_TEXT = 'Sono rimasti meno di 3 sospettati collegati. Se nessuno rientra entro 45 secondi, si torna in sala d’attesa.';
+const FEW_TEXT_RESULT = 'Sono rimasti meno di 3 sospettati collegati. Per continuare servono almeno 3 collegati.';
 function updateFew() {
+  const ph = D.meta && D.meta.phase;
+  fewLow = ph === 'result' && roundSeats().length >= MIN_PLAYERS && roundConnected().length < MIN_PLAYERS;
   fewDeadline = computeFewDeadline();
-  $('fewBanner').classList.toggle('hidden', fewDeadline == null);
+  $('fewBanner').classList.toggle('hidden', fewDeadline == null && !fewLow);
+  $('fewText').textContent = fewLow ? FEW_TEXT_RESULT : FEW_TEXT;
+  $('fewCount').classList.toggle('hidden', fewLow);
+  if (fewLow) { if (fewTimer) { clearInterval(fewTimer); fewTimer = null; } return; }
   if (fewDeadline == null) { stopFew(); return; }
   paintFew();
   if (!fewTimer) fewTimer = setInterval(() => {
@@ -304,7 +311,7 @@ function updateFew() {
 }
 function stopFew() {
   if (fewTimer) { clearInterval(fewTimer); fewTimer = null; }
-  fewDeadline = null;
+  fewDeadline = null; fewLow = false;
   const b = document.getElementById('fewBanner'); if (b) b.classList.add('hidden');
 }
 const hostAwayMsg = () => { const hp = D.players[D.meta.hostSeat]; return hp && hp.connected === false && !isHost() ? 'L’host è scollegato. Se non rientra a breve, un altro giocatore prenderà il suo posto.' : ''; };
@@ -525,7 +532,7 @@ function tally() {
 function renderResult() {
   show('onResult');
   const host = isHost();
-  $('onContinue').classList.toggle('hidden', !(host && fewDeadline == null));
+  $('onContinue').classList.toggle('hidden', !(host && !fewLow));
   $('onNewGame').classList.toggle('hidden', !host);
   $('onResultHint').textContent = host ? '' : (hostAwayMsg() || 'In attesa dell’host…');
   if (!D.result || D.result.round !== D.meta.round || !D.votes || !D.seats) {

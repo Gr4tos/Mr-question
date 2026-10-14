@@ -594,8 +594,30 @@ async function s12b(h) {
   noErrors(h, 'S12b');
 }
 
+async function s12c(h) {
+  console.log('\n== S12c: verdetto con meno di 3 collegati: resta, "Continua" nascosto, nessun conto alla rovescia ==');
+  const a = await h.newPlayer('Anna', { random: 0.99 }), b = await h.newPlayer('Bea', { random: 0.99 }), c = await h.newPlayer('Carlo', { random: 0.99 });
+  const code = await a.create('Anna'); const g = game(h, code);
+  await b.join(code, 'Bea'); await c.join(code, 'Carlo'); await inLobby(a, 3);
+  await a.click('#onStart'); await allOn([a, b, c], 'onTurnScreen');
+  await a.answer(1); await b.answer(2); await c.answer(3);
+  await allOn([a, b, c], 'onSummaryScreen'); await a.click('#onToVote'); await allOn([a, b, c], 'onVoteScreen');
+  const imp = g.nameOf(g.impostor());
+  for (const [n, p] of [['Anna', a], ['Bea', b], ['Carlo', c]]) await castVote(p, n === imp ? (n === 'Anna' ? 'Bea' : 'Anna') : imp);
+  await allOn([a, b, c], 'onResultScreen');
+  check('con 3 collegati: "Continua" e "Nuova partita", nessun avviso', await a.visible('#onContinue') && await a.visible('#onNewGame') && !(await a.visible('#fewBanner')));
+  await c.offline(); await a.settle(400);
+  check('Carlo cade: avviso senza conto alla rovescia, "Continua" nascosto, "Nuova partita" resta', await a.visible('#fewBanner') && !(await a.visible('#fewCount')) && !(await a.visible('#onContinue')) && await a.visible('#onNewGame'), await a.text('#fewBanner'));
+  await h.backend.advance(90000); await a.rerender(); await b.rerender(); await a.settle(500);
+  check('dopo 90 s il verdetto è ancora lì (nessun ritorno in sala)', g.val('meta/phase') === 'result' && (await a.screen()) === 'onResultScreen' && (await b.screen()) === 'onResultScreen');
+  check('"Continua" ancora nascosto, "Nuova partita" disponibile', !(await a.visible('#onContinue')) && await a.visible('#onNewGame'));
+  await c.online(); await a.settle(500);
+  check('Carlo rientra: avviso sparito e "Continua" ricompare', !(await a.visible('#fewBanner')) && await a.visible('#onContinue'));
+  noErrors(h, 'S12c');
+}
+
 // ---------------------------------------------------------------------------
-const SCENARIOS = { s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s12b };
+const SCENARIOS = { s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s12b, s12c };
 (async () => {
   const want = process.argv.slice(2).map(s => s.toLowerCase());
   const run = Object.keys(SCENARIOS).filter(k => !want.length || want.includes(k));
