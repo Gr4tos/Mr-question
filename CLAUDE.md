@@ -18,7 +18,8 @@ Repository: https://github.com/Gr4tos/Mr-question (branch `main`; i file stanno 
 - `assets/vendor/firebase/` — SDK Firebase 13.0.0 modulare (`firebase-app.js`, `firebase-auth.js`, `firebase-database.js`) scaricato da gstatic con gli import interni riscritti in relativi. Non è in `ASSETS` (si salva da solo in cache al primo uso del party online)
 - `tests/` — script di test, mai serviti all'app (vedi "Test")
 - `config.js` — `window.MRQ_CONFIG = { grokEndpoint: "" }` (vuoto)
-- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v13` (in `ASSETS`: shell, `online.js` e i due font; le richieste a siti diversi dal nostro, cioè tutto il traffico Firebase, non passano mai dalla cache)
+- `theme.js` — tema chiaro/scuro/automatico. Si carica **in `<head>` subito dopo `style.css`, senza `defer`** (così il tema è applicato prima del primo disegno, nessun lampo): imposta `data-theme` ("light"/"dark") e `data-theme-pref` ("auto"/"light"/"dark") su `<html>`, aggiorna `<meta name="theme-color">` leggendo `--ink`, segue `prefers-color-scheme` in Automatico. La scelta sta in `localStorage` `mq_theme`. Espone `window.MQTheme = { get, set }`. È in `ASSETS`.
+- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v14` (in `ASSETS`: shell, `online.js` e i due font; le richieste a siti diversi dal nostro, cioè tutto il traffico Firebase, non passano mai dalla cache)
 - `manifest.webmanifest`, `icon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`
 - `assets/fonts/` — `inter-latin.woff2` (Inter variabile, pesi 400–800, sottoinsieme latin) e `special-elite-latin.woff2`, più le licenze: `OFL-Inter.txt` (SIL OFL 1.1) e `LICENSE-SpecialElite-Apache-2.0.txt` (Special Elite è sotto Apache 2.0, non OFL). Le licenze non sono in `ASSETS`, di proposito.
 - `assets/images/mr-question-logo.png` — in realtà è un JPEG opaco rinominato; nascosto di default (classe `logo-missing`)
@@ -97,11 +98,21 @@ Stato: client (`online.js`), regole e test pronti; **le regole sono pubblicate d
 
 **Note iPhone:** se un giocatore mette Safari in background, per un po' risulta scollegato (comportamento di iOS); al ritorno riprende da solo.
 
+## Temi chiaro e scuro (approvati dall'utente)
+
+Tre scelte: Automatico (valore iniziale, segue il sistema), Chiaro, Scuro. Selettore nel menù iniziale (`#themePicker`: tre pulsanti `#themeLight`, `#themeAuto`, `#themeDark`, `role="radio"`, 44×44 px, icone sole / mezzo cerchio / luna in SVG a tratto, sotto la scheda; il codice sta in fondo ad `app.js`). Tema chiaro = "scrivania di giorno": fondo kraft `--ink #ddcca6` (sfumatura da `--bg-g1 #efe4c9`), schede avorio più chiare, inchiostro scuro. Rosso e giallo mantengono i ruoli.
+
+**Regola: tutti i colori passano dalle variabili.** I token stanno in `:root` (scuro, predefinito) e `:root[data-theme="light"]` (solo i valori che cambiano) in `style.css`; fuori da quei blocchi **non si scrive nessun colore** (`check-static.js` lo controlla, in CSS e in `index.html`; fa eccezione la `<meta theme-color>` iniziale e `icon.svg`, che resta fissa). Token per i testi sul fondo: `--on-bg` (titoli), `--on-bg-2` (sottotitoli), `--on-bg-3` (etichette). Rosso: `--stamp` su carta, **`--stamp-top` su fondo pagina** (scuro `#f05a4e`, chiaro `#8d2420`: timbro, eyebrow, "?" del titolo, medaglione, avvisi di rete). Giallo: `--hi` su carta, `--hi-top` come testo sul fondo. Sagoma: `--emblem-mark` (punto di domanda, scuro in entrambi i temi), `--emblem-outline` (contorno scuro **solo nel tema chiaro**, trasparente nello scuro), `--emblem-shadow`. Carta: `--paper-ink3` (scuro `#6f6247`) e `--placeholder` sono stati scuriti per arrivare a 4,5:1. `.quiet-button` dentro schede (`.setup-card`, `.private-stage`, `.vote-wait`, `.vote-confirm-box`, `.exit-card`) usa `--paper-ink2`.
+
+**Conferma di uscita:** `.exit-dialog` ha sfondo **completamente opaco** `var(--scrim)` = `--ink` (scuro nel tema scuro, kraft nel chiaro), senza animazione di opacità sul fondo (solo la scheda `.exit-card` si anima), così la domanda privata sotto non è mai leggibile.
+
+**Contrasti:** `node tests/contrast-check.js` legge i token da `style.css` e verifica 51 coppie (testo 4,5:1; icone, simboli grandi e contorni 3:1) in entrambi i temi: tutte sufficienti. Va rieseguito a ogni cambio di token. `tests/e2e-theme.js` (18 controlli): scelta, memoria, nessun lampo al primo fotogramma, `theme-color`, Automatico che segue il sistema, area di tocco ≥44, contorno della sagoma, opacità della conferma. Per far girare gli altri test in un tema: `MQ_THEME=light node e2e-local.js` (o `dark`), variabile letta da `tests/fake/harness.js`.
+
 ## Direzione artistica (approvata dall'utente)
 
 "Dossier del detective dilettante": fondo scuro = tavolo d'archivio; schede di carta avorio appoggiate sopra. Interfaccia seria nella forma, ironia solo nei dettagli visivi (graffetta, timbro storto). Testi sobri ma con lessico investigativo: sospettati, indagini, deposizioni, metti a verbale, firma l'accusa, riapri il caso.
 
-Token in `:root` di `style.css`: `--ink #15120d` (fondo), `--paper #efe7d6` (schede), `--stamp #a7332e` (rosso timbro), `--hi #d8b739` (giallo evidenziatore), `--emblem #f2c51c` / `--emblem-side #a87f0c` (sagoma).
+Token in `:root` di `style.css` (valori del tema scuro; per il chiaro vedi "Temi chiaro e scuro"): `--ink #15120d` (fondo), `--paper #efe7d6` (schede), `--stamp #a7332e` (rosso timbro), `--hi #d8b739` (giallo evidenziatore), `--emblem #f2c51c` / `--emblem-side #a87f0c` (sagoma).
 
 Ruoli dei colori, da rispettare:
 - rosso = ufficiale/stati (timbri, accusa, verdetto, etichette)
@@ -137,7 +148,7 @@ Da evitare (richiesta esplicita dell'utente): emoji come icone, estetica generic
 
 ## Test (`tests/`)
 
-Dipendenze di sviluppo in `tests/package.json` (Targaryen per le regole, puppeteer-core per Chrome). Il `.gitignore` nella root esclude `tests/node_modules/`, `tests/shots/`, log e file temporanei (`tests/_*`, `*.tmp`); `tests/package-lock.json` invece si committa. Script: `build-rules.js` (genera le regole), `rules.test.js` (14 gruppi, ogni divieto è affiancato dall'operazione fatta dall'attore giusto), `check-static.js`, `sdk-link-check.js` (collega `online.js` all'SDK vero senza rete), `sw-offline-check.js` (service worker vero, offline), `e2e-local.js`, `e2e-online.js` (14 scenari, S1–S12, S12b e S12c). `tests/fake/` contiene il finto database (applica `database.rules.json` con Targaryen), il finto SDK per il browser e i giocatori simulati (un contesto di browser per telefono). Per far passare il tempo (45 s, 24 h) si usa `backend.advance(ms)`. Per sapere chi è l'impostore nei test: `newPlayer(nome, { random: 0.99 })` rende l'estrazione deterministica (l'impostore è l'ultimo posto).
+Dipendenze di sviluppo in `tests/package.json` (Targaryen per le regole, puppeteer-core per Chrome). Il `.gitignore` nella root esclude `tests/node_modules/`, `tests/shots/`, log e file temporanei (`tests/_*`, `*.tmp`); `tests/package-lock.json` invece si committa. Script: `build-rules.js` (genera le regole), `rules.test.js` (14 gruppi, ogni divieto è affiancato dall'operazione fatta dall'attore giusto), `check-static.js`, `sdk-link-check.js` (collega `online.js` all'SDK vero senza rete), `sw-offline-check.js` (service worker vero, offline), `e2e-local.js`, `e2e-online.js` (14 scenari, S1–S12, S12b e S12c), `e2e-theme.js`, `contrast-check.js`. `tests/fake/` contiene il finto database (applica `database.rules.json` con Targaryen), il finto SDK per il browser e i giocatori simulati (un contesto di browser per telefono). Per far passare il tempo (45 s, 24 h) si usa `backend.advance(ms)`. Per sapere chi è l'impostore nei test: `newPlayer(nome, { random: 0.99 })` rende l'estrazione deterministica (l'impostore è l'ultimo posto).
 
 ## Problemi noti / da fare
 

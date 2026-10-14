@@ -12,6 +12,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Mr Question?">
   <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
   <title>Mr Question?</title>
 </head>
 <body>
@@ -62,6 +63,17 @@
         <button id="goLocal" class="primary-button" type="button"><span>Un solo telefono</span></button>
         <button id="goOnline" class="primary-button" type="button"><span>Party online</span></button>
         <p id="menuError" class="inline-error hidden" role="alert"></p>
+      </div>
+      <div id="themePicker" class="theme-picker" role="radiogroup" aria-label="Tema">
+        <button id="themeLight" class="theme-option" type="button" role="radio" aria-checked="false" aria-label="Tema chiaro" data-theme-choice="light">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>
+        </button>
+        <button id="themeAuto" class="theme-option" type="button" role="radio" aria-checked="true" aria-label="Tema automatico" data-theme-choice="auto">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8"/><path class="fill" d="M12 4a8 8 0 0 1 0 16z"/></svg>
+        </button>
+        <button id="themeDark" class="theme-option" type="button" role="radio" aria-checked="false" aria-label="Tema scuro" data-theme-choice="dark">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+        </button>
       </div>
     </section>
 

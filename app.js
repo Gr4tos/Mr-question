@@ -89,3 +89,11 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 $('minusPlayers').addEventListener('click',()=>{if(state.players>3){state.players--;renderNames();}});$('plusPlayers').addEventListener('click',()=>{if(state.players<7){state.players++;renderNames();}});$('startGame').addEventListener('click',startGame);$('showQuestion').addEventListener('click',revealQuestion);$('confirmAnswer').addEventListener('click',confirmAnswer);$('answerInput').addEventListener('input',clearErrors);$('answerInput').addEventListener('keydown',e=>{if(e.key==='Enter')confirmAnswer();});$('goVote').addEventListener('click',goVote);$('restartHome').addEventListener('click',()=>showScreen('home'));$('confirmVote').addEventListener('click',confirmVote);$('changeVote').addEventListener('click',()=>{$('voteConfirmBox').classList.add('hidden');});$('backToAnswers').addEventListener('click',()=>showScreen('vote'));$('rematch').addEventListener('click',startGame);$('newGame').addEventListener('click',()=>showScreen('home'));$('exitButton').addEventListener('click',openExit);$('exitStay').addEventListener('click',closeExit);$('exitConfirm').addEventListener('click',confirmExit);$('goLocal').addEventListener('click',()=>{state.mode='local';clearErrors();showScreen('home');});$('goOnline').addEventListener('click',openOnline);$('backToMenu').addEventListener('click',()=>showScreen('menu'));$('exitDialog').addEventListener('click',e=>{if(e.target===$('exitDialog'))closeExit();});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('exitDialog').classList.contains('hidden'))closeExit();});$('brandLogo').addEventListener('error',()=>{$('brandLogo').classList.add('logo-missing');});
 loadSaved();renderNames();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+
+// ---- tema chiaro / scuro (theme.js applica il tema; qui solo il selettore nel menù) ----
+(function(){
+  const ids={light:'themeLight',auto:'themeAuto',dark:'themeDark'};
+  const paint=()=>{const cur=window.MQTheme?window.MQTheme.get():'auto';Object.keys(ids).forEach(k=>$(ids[k]).setAttribute('aria-checked',String(k===cur)));};
+  Object.keys(ids).forEach(k=>$(ids[k]).addEventListener('click',()=>{if(window.MQTheme)window.MQTheme.set(k);paint();}));
+  paint();
+})();

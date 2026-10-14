@@ -7,7 +7,7 @@ const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 let bad = 0;
 const check = (label, ok, extra) => { if (!ok) bad++; console.log(`${ok ? 'OK  ' : 'FAIL'} - ${label}${extra ? ' :: ' + extra : ''}`); };
 
-for (const [f, mod] of [['app.js', false], ['sw.js', false], ['config.js', false], ['online.js', true]]) {
+for (const [f, mod] of [['app.js', false], ['sw.js', false], ['config.js', false], ['theme.js', false], ['online.js', true]]) {
   const r = mod ? spawnSync(process.execPath, ['--input-type=module', '--check'], { input: read(f) }) : spawnSync(process.execPath, ['--check', path.join(ROOT, f)]);
   check(`sintassi ${f}`, r.status === 0, r.stderr && r.stderr.toString().slice(0, 200));
 }
@@ -20,7 +20,7 @@ for (const f of ['app.js', 'online.js']) {
   const missing = used.filter(x => !ids.includes(x));
   check(`${f}: ${used.length} ID usati con $('...') esistono tutti in index.html`, missing.length === 0, missing.join(','));
 }
-const extra = ['homeError', 'answerError', 'resultError', 'menuError'];
+const extra = ['homeError', 'answerError', 'resultError', 'menuError', 'themeLight', 'themeAuto', 'themeDark'];
 check('ID dei messaggi di errore (usati via showError) esistono', extra.every(x => ids.includes(x)));
 const sw = read('sw.js');
 const assets = [...sw.match(/const ASSETS=\[(.*?)\]/)[1].matchAll(/'\.\/([^']*)'/g)].map(m => m[1]).filter(Boolean);
@@ -32,5 +32,12 @@ const missingIcons = manifest.icons.map(i => i.src).filter(s => !fs.existsSync(p
 check('icone del manifest esistono', missingIcons.length === 0, missingIcons.join(','));
 const vend = fs.readdirSync(path.join(ROOT, 'assets/vendor/firebase'));
 check('SDK Firebase locale: nessun import da Internet', vend.every(f => !/https?:\/\//.test(read(`assets/vendor/firebase/${f}`).replace(/\/\*[\s\S]*?\*\//g, '').match(/from"https?:[^"]*"/g)?.join('') || '')), vend.join(','));
+// tema: nessun colore scritto a mano fuori dai blocchi di token (:root e :root[data-theme="light"]), né in index.html
+const css = read('style.css');
+const afterTokens = css.slice(css.indexOf('*{ box-sizing')).replace(/\/\*[\s\S]*?\*\//g, '');
+const stray = afterTokens.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g) || [];
+check('CSS: nessun colore scritto a mano fuori dai token', stray.length === 0, stray.join(' '));
+check('index.html: nessun colore scritto a mano (fill/stroke/style)', !/(fill|stroke|color|background)(=|:)\s*"?#[0-9a-fA-F]{3,8}/.test(html.replace(/<meta name="theme-color"[^>]*>/, '')));
+check('theme.js è in ASSETS e caricato in <head> subito dopo il CSS', assets.includes('theme.js') && /<link rel="stylesheet" href="style.css">\s*<script src="theme.js"><\/script>/.test(html));
 console.log('cache:', sw.match(/CACHE='([^']+)'/)[1]);
 process.exit(bad ? 1 : 0);

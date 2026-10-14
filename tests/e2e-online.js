@@ -212,6 +212,7 @@ async function s3(h) {
   await c.waitFor(() => !document.getElementById('onResume').classList.contains('hidden'), null, 8000, 'il pulsante di ripresa');
   check('dopo una ricarica compare "Rientra nella partita"', /Rientra nella partita .* come Carlo/.test(await c.text('#onResume')), await c.text('#onResume'));
   await c.click('#onResume'); await c.waitScreen('onTurnScreen'); await ready(c);
+  for (let k = 0; k < 30 && g.val('players/p3/connected') !== true; k++) await sleep(100); // la presenza si scrive un attimo dopo l'ingresso
   check('si rientra nel proprio posto con la propria domanda', g.val('players/p3/connected') === true && g.val('players/p3/owner') === (await c.page.evaluate(() => localStorage.getItem('fake_uid'))));
   // unica scrittura rifiutata ammessa: il vecchio telefono che, tornato in rete, prova a segnarsi presente nel posto ormai ripreso
   noErrors(h, 'S3', d => d.path.endsWith('/players/p2') && d.keys.join() === 'connected,disconnectedAt');

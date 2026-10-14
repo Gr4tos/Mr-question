@@ -144,6 +144,8 @@ async function startHarness() {
     p.fakeSdk = fake;
     await p.attach();
     if (random !== null) await page.evaluateOnNewDocument(r => { Math.random = () => r; }, random);
+    // MQ_THEME=light|dark|auto: scelta del tema per tutta la batteria di test (se la pagina non ne ha una salvata)
+    if (process.env.MQ_THEME) await page.evaluateOnNewDocument(t => { try { if (!localStorage.getItem('mq_theme')) localStorage.setItem('mq_theme', t); } catch (e) { /* ignora */ } }, process.env.MQ_THEME);
     h.players.push(p);
     return p;
   };
