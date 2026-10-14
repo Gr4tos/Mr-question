@@ -105,7 +105,7 @@ button{ touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color
 }
 
 /* HOME ----------------------------------------------------------- */
-#homeScreen.active{ display:flex; flex-direction:column; justify-content:center; padding-top:6px; }
+#homeScreen.active, #menuScreen.active{ display:flex; flex-direction:column; justify-content:center; padding-top:6px; }
 
 /* Timbro CASO APERTO (nella topbar) */
 .topbar-right{ margin-left:auto; padding-top:6px; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
@@ -297,7 +297,7 @@ button{ touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color
 .vote-confirm-box .quiet-button{ margin-top:8px; }
 
 /* VERDETTO ------------------------------------------------------- */
-#resultScreen{ position:relative; text-align:center; }
+#resultScreen, #onResultScreen{ position:relative; text-align:center; }
 .result-medallion{ width:76px; height:76px; display:grid; place-items:center; margin:12px auto 20px;
   border:2.5px solid var(--stamp); border-radius:50%; background: rgba(167,51,46,.06);
   color: var(--stamp); font-size:34px; transform: rotate(-7deg); }
@@ -312,6 +312,61 @@ button{ touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color
 .reveal-card .question-label{ color: var(--paper-ink3); }
 .reveal-card strong{ display:block; margin-top:7px; font-family: var(--sans); font-weight:800;
   font-size:23px; letter-spacing:-.03em; color: var(--stamp); }
+
+/* PARTY ONLINE --------------------------------------------------- */
+.mode-note{ margin:8px 2px 4px; font-size:12px; line-height:1.45; color: var(--paper-ink2); text-align:center; }
+.or-line{ display:flex; align-items:center; gap:10px; margin:18px 0 12px;
+  font-family: var(--mono); font-size:9px; letter-spacing:.12em; color: var(--paper-ink3); }
+.or-line::before, .or-line::after{ content:""; flex:1; border-top:1px dashed var(--paper-line); }
+.on-card .answer-label{ margin-bottom:0; }
+.on-card .name-input{ margin-top:8px; font-size:15px; }
+.code-input{ text-align:center; text-transform:uppercase; font-family: var(--mono); font-size:22px;
+  letter-spacing:.32em; padding-left: calc(12px + .32em); }
+.code-input::placeholder{ letter-spacing:.2em; font-size:14px; }
+
+.lobby-card .setup-heading{ margin-top:14px; }
+.lobby-card .setup-heading:first-of-type{ margin-top:0; }
+.lobby-code{ margin:12px 0 6px; padding-left:.22em; text-align:center; font-family: var(--mono);
+  font-size:44px; line-height:1; letter-spacing:.22em; color: var(--paper-ink); }
+.lobby-help{ margin:0 0 4px; text-align:center; font-size:12px; line-height:1.5; color: var(--paper-ink2); }
+.lobby-hint{ margin:14px 0 0; text-align:center; font-family: var(--mono); font-size:11px;
+  letter-spacing:.04em; line-height:1.5; color:#9a8c6a; }
+.setup-card .lobby-hint{ color: var(--paper-ink3); }
+.lobby-hint:empty{ display:none; }
+
+.player-list{ display:grid; gap:6px; margin:10px 0 2px; }
+.player-row{ display:flex; align-items:center; gap:10px; min-height:44px; padding:7px 11px;
+  border:1px solid var(--paper-edge); border-radius:8px; background: var(--paper-2); }
+.player-row.is-me{ border-color: var(--paper-line); }
+.player-row .avatar{ width:30px; height:30px; font-size:13px; }
+.player-name{ flex:1; min-width:0; font-size:13px; font-weight:600; color: var(--paper-ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.player-tag{ font-family: var(--mono); font-size:9px; letter-spacing:.1em; color: var(--paper-ink3);
+  border:1px solid var(--paper-line); border-radius:4px; padding:2px 5px; }
+.dot{ width:9px; height:9px; border-radius:50%; background: var(--green); flex-shrink:0; }
+.dot.off{ background:#b3a581; }
+
+.wait-list{ display:grid; gap:6px; margin:10px 0 12px; }
+.wait-row{ display:flex; align-items:center; gap:10px; padding:8px 11px;
+  border:1px solid var(--paper-edge); border-radius:8px; background: var(--paper-2);
+  font-size:13px; font-weight:600; color: var(--paper-ink); text-align:left; }
+.wait-row .mark{ margin-left:auto; font-family: var(--mono); font-size:15px; color: var(--paper-ink3); }
+.wait-row.done .mark{ color: var(--stamp); }
+.wait-row .count{ margin-left:auto; font-family: var(--mono); font-size:18px; color: var(--stamp); }
+.wait-answer{ margin:8px 0 18px; font-family: var(--mono); font-size:30px; color: var(--stamp); }
+
+.notice{ margin:12px 0 0; padding:9px 11px; border:1px solid var(--stamp); border-radius:4px;
+  background: var(--stamp-bg); color: var(--stamp-ink);
+  font-family: var(--mono); font-size:11px; letter-spacing:.04em; line-height:1.45; }
+.net-banner{ margin:0 0 8px; padding:7px 10px; border:1px dashed var(--stamp); border-radius:4px;
+  text-align:center; font-family: var(--mono); font-size:10px; letter-spacing:.06em; color:#d98a85; }
+.votes-card{ margin:14px 0 4px; padding:14px; border:1.5px dashed var(--paper-line); border-radius:9px;
+  background: var(--paper); text-align:left; }
+.votes-card .question-label{ color: var(--paper-ink3); }
+.votes-card .wait-list{ margin-bottom:0; }
+.vote-wait{ margin-top:6px; padding:14px; border:1px solid var(--paper-edge); border-radius:9px; background: var(--paper); }
+.vote-wait .question-label{ color: var(--stamp); }
+.vote-wait .wait-list{ margin-bottom:4px; }
 
 /* ---------- Responsività ---------- */
 @media (max-height: 740px){

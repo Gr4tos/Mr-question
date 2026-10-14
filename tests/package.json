@@ -1,0 +1,19 @@
+{
+  "name": "mr-question-tests",
+  "private": true,
+  "description": "Script di test (non fanno parte dell'app servita). Dipendenze solo per sviluppo.",
+  "scripts": {
+    "build-rules": "node build-rules.js",
+    "check": "node check-static.js",
+    "test:rules": "node --test rules.test.js",
+    "test:local": "node e2e-local.js",
+    "test:online": "node e2e-online.js",
+    "test:sdk": "node sdk-link-check.js",
+    "test": "node build-rules.js && node check-static.js && node --test rules.test.js && node sdk-link-check.js && node sw-offline-check.js && node e2e-local.js && node e2e-online.js",
+    "test:sw": "node sw-offline-check.js"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.0.0",
+    "targaryen": "^3.1.0"
+  }
+}

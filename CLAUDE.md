@@ -4,17 +4,21 @@ Rispondi sempre in italiano. L'utente non è uno sviluppatore esperto: spiega co
 
 ## Cos'è
 
-Party game investigativo con impostore, 3–7 giocatori, mobile-first (Safari iPhone in primis). Web app statica (HTML/CSS/JS, nessun build step, nessuna dipendenza npm) pubblicata su GitHub Pages dal branch `main`, cartella root.
+Party game investigativo con impostore, 3–7 giocatori, mobile-first (Safari iPhone in primis). Web app statica (HTML/CSS/JS, nessun build step, nessuna dipendenza npm a runtime) pubblicata su GitHub Pages dal branch `main`, cartella root. Due modalità: "Un solo telefono" (pass-and-play, funziona offline) e "Party online" (ognuno sul proprio telefono, Firebase). Solo la cartella `tests/` ha dipendenze npm di sviluppo (non fanno parte dell'app).
 
 Repository: https://github.com/Gr4tos/Mr-question (branch `main`; i file stanno direttamente nella root del repo, nessuna sottocartella)
 
 ## Struttura reale (verificata)
 
-- `index.html` — tutte le schermate in un'unica pagina (`homeScreen`, `turnScreen`, `voteScreen`, `ballotScreen`, `resultScreen`)
+- `index.html` — tutte le schermate in un'unica pagina. Menù iniziale: `menuScreen` ("Un solo telefono" / "Party online"). Un solo telefono: `homeScreen` (impostazione), `turnScreen`, `voteScreen`, `ballotScreen`, `resultScreen`. Party online: `onMenuScreen`, `onLobbyScreen`, `onTurnScreen`, `onSummaryScreen`, `onVoteScreen`, `onResultScreen`. La sagoma `mqSilhouette` sta in un `<svg>` nascosto a inizio `<body>` ed è usata da `menuScreen` e `homeScreen`.
 - `style.css` — unico foglio di stile, direzione "dossier" (vedi sotto); i font sono caricati in locale con `@font-face` (nessun import da Google)
-- `app.js` — tutta la logica, nessun framework
+- `app.js` — logica della modalità a un telefono, menù, uscita e ponte verso il party online (`window.MRQ`); nessun framework
+- `online.js` — modulo ES del party online (Firebase). Si carica **solo** quando si tocca "Party online" (`import()` da `app.js`): la modalità a un telefono non lo carica mai
+- `database.rules.json` — regole del Realtime Database, **generate** da `tests/build-rules.js` (non modificarle a mano: modifica lo script e rigenera)
+- `assets/vendor/firebase/` — SDK Firebase 13.0.0 modulare (`firebase-app.js`, `firebase-auth.js`, `firebase-database.js`) scaricato da gstatic con gli import interni riscritti in relativi. Non è in `ASSETS` (si salva da solo in cache al primo uso del party online)
+- `tests/` — script di test, mai serviti all'app (vedi "Test")
 - `config.js` — `window.MRQ_CONFIG = { grokEndpoint: "" }` (vuoto)
-- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v9` (in `ASSETS` ci sono anche i due font)
+- `sw.js` — service worker cache-first, nome cache `mr-question-shell-v10` (in `ASSETS`: shell, `online.js` e i due font; le richieste a siti diversi dal nostro, cioè tutto il traffico Firebase, non passano mai dalla cache)
 - `manifest.webmanifest`, `icon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`
 - `assets/fonts/` — `inter-latin.woff2` (Inter variabile, pesi 400–800, sottoinsieme latin) e `special-elite-latin.woff2`, più le licenze: `OFL-Inter.txt` (SIL OFL 1.1) e `LICENSE-SpecialElite-Apache-2.0.txt` (Special Elite è sotto Apache 2.0, non OFL). Le licenze non sono in `ASSETS`, di proposito.
 - `assets/images/mr-question-logo.png` — in realtà è un JPEG opaco rinominato; nascosto di default (classe `logo-missing`)
@@ -23,11 +27,15 @@ Non esiste una cartella `worker/`: il Cloudflare Worker per Grok non è nel repo
 
 ## Flusso di gioco (da preservare)
 
+0. Menù iniziale (`menuScreen`): "Un solo telefono" porta alla Home di impostazione (`homeScreen`, con "Indietro"); "Party online" apre il flusso online (vedi sezione dedicata). Senza rete "Party online" mostra un messaggio chiaro e il pulsante "Un solo telefono" resta usabile.
+
+Modalità "Un solo telefono":
+
 1. Home: stepper 3–7 giocatori, nomi facoltativi (campi vuoti con placeholder "Sospettato N"; un campo vuoto usa il placeholder come nome; i nomi effettivi devono essere diversi), "Apri le indagini". Il testo scritto nei campi sta in `state.inputs`, i nomi effettivi del round in `state.names`.
 2. Turni privati: nome del giocatore, "Apri la scheda" rivela la domanda, risposta numerica, "Metti a verbale". Il telefono passa di mano.
 3. Riepilogo pubblico: domanda comune + tutte le risposte.
 4. Votazione con conferma esplicita.
-5. Verdetto, "Riapri il caso" (rivincita stessi nomi) o "Nuovo fascicolo".
+5. Verdetto con due pulsanti **di pari peso** (entrambi `.primary-button`, stessa forma e dimensione): "Continua" (stessi giocatori e stessi nomi, nuovo round) e "Nuova partita" (torna alla schermata di impostazione con numero e nomi memorizzati). Lo stesso vale nel verdetto online (per l'host).
 
 Regole fondamentali:
 - L'impostore riceve una domanda alternativa e **non sa di essere l'impostore**. Nessun testo deve rivelarglielo. Vale anche per il futuro multiplayer.
@@ -37,12 +45,53 @@ Regole fondamentali:
 
 ## Dettagli tecnici di app.js
 
-- `$ = id => document.getElementById(id)`; usa 38 ID dell'HTML via `$('...')` (tra cui `caseStamp`, il timbro, e `exitButton`/`exitDialog`/`exitStay`/`exitConfirm` per l'uscita dalla partita), più `homeError`, `answerError`, `resultError` (messaggi di errore inline, usati da `showError()`/`clearErrors()`). **Non rinominarli** senza aggiornare tutti i riferimenti. Non si usa più `alert()`.
+- `$ = id => document.getElementById(id)`; `app.js` usa 43 ID dell'HTML via `$('...')` e `online.js` ne usa 49 (alcuni in comune, es. `netBanner`), più `homeError`, `answerError`, `resultError`, `menuError` (messaggi di errore inline, usati da `showError()`/`clearErrors()`). **Non rinominarli** senza aggiornare tutti i riferimenti (`node tests/check-static.js` li verifica). Non si usa più `alert()`.
+- `state.mode` è `'local'` o `'online'` e decide i testi della conferma di uscita (`EXIT_TEXT`) e cosa fa "Sì": in online chiama `window.MRQ.leaveOnline()` (impostata da `online.js`). `window.MRQ` espone a `online.js`: `showScreen`, `pickQuestion` (sceglie e marca come usata una domanda locale), `escapeHtml`, `setMode`.
 - 50 coppie di domande integrate in `BUILTIN` (formato `[comune, impostore, risp, risp, categoria]`).
 - `localStorage`: `mq_bank` (archivio domande), `mq_used` (ID già usati), `mq_last` (ultimo impostore).
 - `fetchLiveQuestions()` chiama `POST {grokEndpoint}/generate` solo se online e se l'endpoint non è vuoto; con endpoint vuoto il ramo non parte mai. Fallback automatico sulle domande locali.
 - `addQuestions()` deduplica per coppia comune|impostore.
 - Il README descrive una sezione "Archivio" con import/export JSON e prompt per Grok: **non è implementata** nell'interfaccia.
+
+## Party online (Firebase Realtime Database + accesso anonimo, piano Spark, niente Cloud Functions)
+
+Stato: client (`online.js`), regole e test pronti; **le regole sono pubblicate dall'utente** e provate anche sul database vero (`tests/live-online.js`, vedi sotto). Progetto Firebase: `mr-question-c67d1`, database in `europe-west1` (la `firebaseConfig` è pubblica, sta in `online.js`; non è un segreto).
+
+**Prove sul database vero (fatte):** `tests/live-online.js` (L1 partita da 3 con ~35 attacchi alle regole in ogni fase, L2 da 7 con l'ottavo rifiutato, L3 host che cade in sala, L4 posto ripreso da un altro telefono, L5 host che cade a metà round con "Prosegui senza gli assenti"; L3–L5 con i 45 s reali). Risultato: tutto passa, tutti gli attacchi sono rifiutati come nel simulatore, il passaggio dell'host avviene a 47–50 s e la ripresa del posto a ~50 s, e ogni partita di prova viene cancellata dalle regole (l'ultimo giocatore esce dalla sala). Chrome va lanciato **senza** intercettazione delle richieste (rompe le chiamate verso Firebase) e servito da `localhost` (dominio autorizzato). Lo script stampa e salva in `tests/live-created.txt` il codice di ogni partita creata: se una prova si interrompe, quei codici (e i nodi `games`/`index`, gli utenti anonimi) vanno cancellati a mano dalla console, perché senza credenziali di amministratore le regole non permettono di elencarli.
+
+**Differenze trovate tra database vero e simulatore:**
+1. **`index`: la ricerca di pulizia è RIFIUTATA dal database vero** (il simulatore la accettava). La regola `.read` di `index` (`query.orderByValue === true && query.endAt <= now - 86400000 && query.limitToFirst <= 10`) non lascia passare nemmeno la query legittima; le query su altri nodi funzionano. Quindi la pulizia automatica delle partite ferme da 24 ore **oggi non funziona** (l'app registra solo un avviso `pulizia Permission denied`, nessun effetto visibile). **Aperto**: `tests/build-diag-rules.js` genera `tests/diag-index.rules.json` (15 varianti della regola in un nodo `diag`) e `tests/live-diag.js` le prova; l'utente deve pubblicare il file diagnostico, poi si sceglie la variante che funziona, si corregge `tests/build-rules.js` e si ripubblica `database.rules.json`. Dopo la correzione si può provare la pulizia dal vivo senza aspettare 24 h creando un `index/CODICE` con un valore vecchio.
+2. **Il database vero annulla gli ascoltatori quando perde il permesso di lettura** (cambio di fase, uscita). Il simulatore no. L'app ora butta i dati vecchi in silenzio, riprova dopo 1,5 s e avvisa solo se il problema persiste; il verdetto mostra un segnaposto "…" finché i dati nuovi non arrivano (prima, per qualche secondo, mostrava il verdetto del round precedente).
+3. Il vero SDK scrive un avviso in console per ogni operazione rifiutata (anche quelle volute nei test).
+
+**Dati** (`games/CODE/...`, CODE = 5 lettere senza I e O, es. `/^[A-HJ-NP-Z]{5}$/`). I giocatori occupano posti fissi `p1`..`p7` (il tetto di 7 lo fa il database; il posto sopravvive al cambio di telefono, che su iPhone succede tra app installata e Safari):
+- `meta`: `hostSeat`, `phase` (`lobby`, `answering`, `summary`, `vote`, `result`), `round`, `notice` (`{code:'vanished'|'few', round}`)
+- `players/pN`: `owner` (uid anonimo), `name` (immutabile, unico senza distinguere maiuscole, 1–20 caratteri), `connected`, `disconnectedAt`, `joinedAt`
+- `seats/pN`: chi partecipa al round corrente (l'esclusione di un assente = toglierlo da qui)
+- `private/pN`: `{question, round}`, leggibile solo dal proprietario del posto. **Non contiene il ruolo**: l'impostore non può saperlo
+- `hostOnly`: `{impostor, prev}`, solo host. `reveal`: domanda comune, leggibile da "riepilogo" in poi. `result`: `{impostor, round}`, letto solo al verdetto
+- `answered/pN` e `voted/pN`: flag pubblici (si vede solo CHI ha risposto/votato). `answers/pN` (leggibili da "riepilogo") e `votes/pN` (leggibili solo al verdetto; il proprietario legge il proprio)
+- `index/CODE`: ultimo movimento, serve solo alla pulizia
+
+**Regole di gioco online:** l'host sceglie domanda e impostore tra le domande locali; "Continua" e "Nuova partita" sono dell'host; il voto è segreto, non si vota se stessi, vince il più votato, in pareggio l'impostore si salva; il verdetto mostra solo il numero di voti ricevuti. Il conteggio dei voti lo fa ogni telefono dopo che i voti diventano leggibili (l'host non li legge mai prima). L'host avanza da solo di fase quando tutti hanno risposto/votato; "Alle votazioni" è un suo pulsante.
+
+**Scritture in ordine (importante):** per un nuovo round l'host fa **prima** un unico update multi-percorso che azzera `answered/answers/voted/votes/result`, scrive `seats`, `private`, `reveal`, `hostOnly`, `notice`, e **solo dopo** un secondo update cambia `meta/phase` e `meta/round` (così nessuno vede la fase "risposte" prima che la sua domanda esista).
+
+**Presenza e tolleranza (45 s):** `onDisconnect` scrive `connected:false` + `disconnectedAt` (ora del server). Il pallino diventa grigio subito; un giocatore conta come **assente** solo dopo 45 s continui (`GRACE`). Solo allora: un altro telefono può riprendere il suo posto (stesso nome, senza distinguere maiuscole), un altro giocatore può prendere il ruolo di host (il collegato entrato prima), l'host può usare "Prosegui senza gli assenti". Le regole del database applicano la stessa soglia; il client aspetta 1 s in più (`MARGIN`) per l'orologio.
+
+**Sala d'attesa e partita mai orfana:** se l'host si scollega, dopo 45 s il ruolo passa al giocatore collegato entrato prima (vale in ogni fase, sala compresa). In sala il nuovo host toglie i posti di chi è assente da più di 45 s (anche l'ex host), così il limite di 7 non si blocca con "fantasmi"; l'ex host che rientra scopre di essere stato rimosso e può rientrare come nuovo giocatore. Se l'host **esce volontariamente** dal menù il ruolo passa subito (nessuna attesa). Se esce l'ultimo giocatore dalla sala, la partita e il suo indice vengono cancellati (le regole lo permettono solo se l'update lascia `players` vuoto). Solo se l'host da solo sparisce senza uscire (app chiusa) la partita resta fino alla pulizia delle 24 ore.
+
+**Assenti esclusi:** se tra gli esclusi c'è l'impostore l'host annulla il round e ne avvia uno nuovo con un'altra domanda; a tutti compare l'avviso neutro "Un sospettato si è dileguato: si riapre il caso." (non dice chi era). Con meno di 3 rimasti si torna in sala d'attesa ("Giocatori insufficienti").
+
+**Pulizia (da correggere, vedi "Differenze"):** nessuna Cloud Function. Chi crea una partita dovrebbe cancellare fino a 5 partite ferme da più di 24 ore (le regole dovrebbero permettere di leggere `index` solo con una query su valori vecchi, quindi non si potrebbero elencare le partite attive). **Oggi la query è rifiutata dal database vero**, quindi la pulizia non parte.
+
+**Sicurezza ("tra amici"):** le regole impediscono di leggere la domanda privata o le risposte altrui prima del momento giusto e limitano le scritture alla propria parte. Accettato: l'host può tecnicamente conoscere l'impostore e le domande; chi conosce il codice può leggere i nomi in sala; chi conosce il nome di un giocatore scollegato da più di 45 s può prenderne il posto; il numero minimo di giocatori è controllato solo dall'app. I nomi altrui si inseriscono sempre come testo (mai `innerHTML`).
+
+**Regole del database:** `database.rules.json` si genera con `node tests/build-rules.js` (le espressioni lunghe sono costruite da codice e il limite di 1024 caratteri è controllato). Per pubblicarle: Console Firebase → Realtime Database → Regole → incolla il contenuto del file → Pubblica. Nella console vanno anche controllati: Authentication → metodo di accesso "Anonimo" attivo; Authentication → Impostazioni → Domini autorizzati con `localhost` e `gr4tos.github.io`; nessuna restrizione sulla chiave API finché si fanno test da script.
+
+**Senza rete:** `startOnline()` non parte se `navigator.onLine` è falso (messaggio chiaro, resta "Un solo telefono"); lo stesso se il modulo o Firebase non si raggiungono. I dati del party non vengono mai messi in cache.
+
+**Note iPhone:** se un giocatore mette Safari in background, per un po' risulta scollegato (comportamento di iOS); al ritorno riprende da solo.
 
 ## Direzione artistica (approvata dall'utente)
 
@@ -61,7 +110,7 @@ Pulsante principale `.primary-button`: barra spazio da macchina da scrivere, bei
 
 Emblema Home: sagoma di detective (cappello a falda, colletto del trench, spalle) gialla con punto di domanda nero al posto del viso, con spessore "cartoncino" (copie sfalsate in `--emblem-side`) e ombra piatta. È definita come `<g id="mqSilhouette">` dentro `index.html`. La stessa sagoma è l'icona dell'app.
 
-Home e topbar: nella topbar (su tutte le schermate) a sinistra "CASO N° 0037", a destra il timbro rosso inclinato `#caseStamp`: "CASO APERTO" ovunque, "CASO CHIUSO" sulla schermata del verdetto (lo cambia `showScreen()`; con "Riapri il caso" e "Nuovo fascicolo" torna "CASO APERTO"). Sotto il timbro c'è il tastino di uscita `#exitButton` (icona porta con freccia, solo SVG), visibile solo nelle schermate `turn`, `vote`, `ballot` (lo gestisce `showScreen()`). Apre la conferma `#exitDialog` ("Vuoi tornare al menù principale?" / "La partita in corso andrà persa."): "No, continua" è il pulsante principale (barra spazio) e chiude la conferma senza toccare la schermata; "Sì, torna al menù" è secondario (`.quiet-button`), azzera la partita (`state.round`, voto, domanda e risposta nel DOM) e torna alla Home mantenendo numero e nomi dei giocatori. Con la conferma aperta `<main>` è `inert`; Esc o tocco sullo sfondo equivalgono a "No, continua". Il timbro e il tastino stanno in `.topbar-right` (la topbar è allineata in alto: il timbro deve restare a 17px dal bordo della pagina nella Home, come approvato). Non c'è più l'indicatore di connessione: la logica online/offline resta solo in `startGame()`/`fetchLiveQuestions()` via `navigator.onLine`. Nella Home, il blocco sagoma + "MR QUESTION?" (`--mono`, 28px, "?" rosso timbro) + scheda è centrato in verticale; la graffetta sta sul bordo superiore destro della scheda e non deve toccare nessun testo (controllato a 375×667 e 390×844). Nessun footer, nessun titolo/slogan, nessuna riga sotto la scheda. Nei pulsanti principali l'icona sta a destra del testo; "Apri le indagini" ha l'icona SVG del tasto Invio (a tratto, `currentColor`).
+Home e topbar: nella topbar (su tutte le schermate) a sinistra "CASO N° 0037", a destra il timbro rosso inclinato `#caseStamp`: "CASO APERTO" ovunque, "CASO CHIUSO" sulla schermata del verdetto (lo cambia `showScreen()`; con "Continua" e "Nuova partita" torna "CASO APERTO"). Sotto il timbro c'è il tastino di uscita `#exitButton` (icona porta con freccia, solo SVG), visibile nelle schermate di gioco (`GAME_SCREENS` in `app.js`: `turn`, `vote`, `ballot` e, online, `onLobby`, `onTurn`, `onSummary`, `onVote`, `onResult`; lo gestisce `showScreen()`; il timbro diventa "CASO CHIUSO" anche su `onResult`). Apre la conferma `#exitDialog`. In modalità a un telefono: "Vuoi tornare al menù principale?" / "La partita in corso andrà persa."; "No, continua" è il pulsante principale (barra spazio) e chiude la conferma senza toccare la schermata; "Sì, torna al menù" è secondario (`.quiet-button`, almeno 44px di altezza), azzera la partita (`state.round`, voto, domanda e risposta nel DOM) e torna al menù principale (`menuScreen`), mantenendo numero e nomi dei giocatori. In modalità online: "Vuoi uscire dalla partita?" / "Gli altri continueranno senza di te." con "No, resta" / "Sì, esci". Con la conferma aperta `<main>` è `inert`; Esc o tocco sullo sfondo equivalgono a "No, continua". Il timbro e il tastino stanno in `.topbar-right` (la topbar è allineata in alto: il timbro deve restare a 17px dal bordo della pagina nella Home, come approvato). Non c'è più l'indicatore di connessione: la logica online/offline resta solo in `startGame()`/`fetchLiveQuestions()` via `navigator.onLine`. Nella Home, il blocco sagoma + "MR QUESTION?" (`--mono`, 28px, "?" rosso timbro) + scheda è centrato in verticale; la graffetta sta sul bordo superiore destro della scheda e non deve toccare nessun testo (controllato a 375×667 e 390×844). Nessun footer, nessun titolo/slogan, nessuna riga sotto la scheda. Nei pulsanti principali l'icona sta a destra del testo; "Apri le indagini" ha l'icona SVG del tasto Invio (a tratto, `currentColor`).
 
 Da evitare (richiesta esplicita dell'utente): emoji come icone, estetica generica "fatta dall'AI", glow/neon/gradienti decorativi messi a caso, card standard, illustrazioni che non servono al prodotto. Le illustrazioni si disegnano in SVG con forme geometriche nette (le sagome organiche "a mano libera" sono venute male).
 
@@ -77,11 +126,14 @@ Da evitare (richiesta esplicita dell'utente): emoji come icone, estetica generic
 
 ## Verifica dopo ogni modifica
 
-- `node --check app.js sw.js config.js`
-- ogni ID usato da `$('...')` in `app.js` esiste in `index.html`, nessun ID duplicato
-- ogni file in `ASSETS` di `sw.js` e ogni icona del manifest esiste
-- prova manuale con `python3 -m http.server 8080`: partita completa da 3 giocatori, poi da 7; verdetto corretto e sbagliato; rivincita; modalità offline (DevTools → Network → Offline dopo il primo caricamento)
+- `node --check app.js sw.js config.js` (e `online.js` come modulo): lo fa `node tests/check-static.js`, che controlla anche che ogni ID usato da `$('...')` in `app.js` e `online.js` esista in `index.html`, nessun ID duplicato, ogni file in `ASSETS` e ogni icona del manifest esistano
+- `cd tests && npm install` (una volta) poi `npm test`: regole (Targaryen), controlli statici, collegamento all'SDK vero, service worker offline, regressione "un solo telefono", partite online simulate (3 e 7 giocatori, privacy, disconnessioni, host, assenti). Le prove online usano un finto backend con le **stesse** regole: non sostituiscono la prova sul database vero
+- prova manuale (python o `node`): partita completa da 3 giocatori, poi da 7; verdetto corretto e sbagliato; "Continua"; "Nuova partita"; modalità offline (DevTools → Network → Offline dopo il primo caricamento)
 - riporta chiaramente cosa hai testato e cosa resta da testare sul telefono vero
+
+## Test (`tests/`)
+
+Dipendenze di sviluppo in `tests/package.json` (Targaryen per le regole, puppeteer-core per Chrome). Il `.gitignore` nella root esclude `tests/node_modules/`, `tests/shots/`, log e file temporanei (`tests/_*`, `*.tmp`); `tests/package-lock.json` invece si committa. Script: `build-rules.js` (genera le regole), `rules.test.js` (14 gruppi, ogni divieto è affiancato dall'operazione fatta dall'attore giusto), `check-static.js`, `sdk-link-check.js` (collega `online.js` all'SDK vero senza rete), `sw-offline-check.js` (service worker vero, offline), `e2e-local.js`, `e2e-online.js` (10 scenari). `tests/fake/` contiene il finto database (applica `database.rules.json` con Targaryen), il finto SDK per il browser e i giocatori simulati (un contesto di browser per telefono). Per far passare il tempo (45 s, 24 h) si usa `backend.advance(ms)`. Per sapere chi è l'impostore nei test: `newPlayer(nome, { random: 0.99 })` rende l'estrazione deterministica (l'impostore è l'ultimo posto).
 
 ## Problemi noti / da fare
 
@@ -95,7 +147,7 @@ Da evitare (richiesta esplicita dell'utente): emoji come icone, estetica generic
 ## Roadmap (ordine deciso con l'utente)
 
 1. Completare e rifinire la versione offline pass-and-play (punti sopra).
-2. Party online: stanza con codice d'accesso, ognuno sul proprio telefono, backend Firebase (scelto per piano gratuito e sincronizzazione realtime). La modalità offline su un solo telefono deve restare. L'account Firebase lo crea l'utente: non inventare credenziali o configurazioni.
+2. Party online: stanza con codice d'accesso, ognuno sul proprio telefono, backend Firebase (scelto per piano gratuito e sincronizzazione realtime). La modalità offline su un solo telefono deve restare. L'account Firebase lo crea l'utente: non inventare credenziali o configurazioni. **Stato:** implementato e provato con un finto backend; mancano la pubblicazione delle regole da parte dell'utente e le prove sul database vero e sui telefoni.
 3. Pubblicazione sugli store (iPhone e Android). Da decidere: PWA impacchettata vs app nativa. Per l'App Store serve un Mac e un account Apple Developer.
 
 Grok: decisione rimandata. Se si riprende, la chiave va solo in un backend (Worker o funzione Firebase), mai nel client.

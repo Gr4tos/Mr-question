@@ -1,0 +1,18 @@
+# Test: dipendenze e file temporanei (non fanno parte dell'app servita)
+tests/node_modules/
+tests/shots/
+tests/.tmp/
+tests/tmp/
+tests/*.log
+tests/*.tmp
+tests/_*
+
+# Log, sistema, editor
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+tests/live-created.txt
+tests/diag-index.rules.json
