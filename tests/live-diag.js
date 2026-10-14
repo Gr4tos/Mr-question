@@ -8,10 +8,13 @@ const L = require('./fake/live');
   try {
     p = await h.newPlayer('diag', { fake: false });
     await p.goOnline();
-    const keys = Object.keys(require('./diag-index.rules.json').rules.diag).filter(k => k.startsWith('d'));
-    console.log('Ricerca: orderByValue + endAt(1000) + limitToFirst(5) su ogni variante della regola\n');
+    const keys = Object.keys(require('./diag-index.rules.json').rules.diag).filter(k => /^[de]\d/.test(k));
+    console.log('Ricerca su ogni variante: nodi d* con orderByValue + endAt(1000) + limitToFirst(5); nodi e* con orderByChild("t") (e05: orderByKey)\n');
+    const byValue = "const {query,ref,get,orderByValue,endAt,limitToFirst}=D; return (await get(query(ref(db, arg), orderByValue(), endAt(1000), limitToFirst(5)))).val();";
+    const byChild = "const {query,ref,get,orderByChild,endAt,limitToFirst}=D; return (await get(query(ref(db, arg), orderByChild('t'), endAt(1000), limitToFirst(5)))).val();";
+    const byKey = "const {query,ref,get,orderByKey,endAt,limitToFirst}=D; return (await get(query(ref(db, arg), orderByKey(), endAt('zzzzz'), limitToFirst(5)))).val();";
     for (const k of keys) {
-      const r = await L.run(p, "const {query,ref,get,orderByValue,endAt,limitToFirst}=D; return (await get(query(ref(db, arg), orderByValue(), endAt(1000), limitToFirst(5)))).val();", `diag/${k}`);
+      const r = await L.run(p, k.startsWith('e05') ? byKey : k.startsWith('e') ? byChild : byValue, `diag/${k}`);
       console.log(k.padEnd(34), r.ok ? 'CONSENTITA' : (L.isDenied(r) ? 'rifiutata ' : 'ERRORE ' + r.code + ' ' + r.message));
     }
     console.log('\nRicerca senza filtri su index (deve essere rifiutata):');

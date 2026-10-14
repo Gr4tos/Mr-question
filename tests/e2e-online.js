@@ -51,13 +51,13 @@ async function s1(h) {
   const by = { Anna: a, Bea: b, Carlo: c };
   const code = await a.create('Anna'); const g = game(h, code);
   check('codice di 5 lettere senza I e O', /^[A-HJ-NP-Z]{5}$/.test(code), code);
-  check('sala: l\'host vede "Apri le indagini" ma disattivato', await a.visible('#onStart') && await a.disabled('#onStart'));
+  check('sala, host da solo: nessun pulsante, legge "In attesa di altri 2 sospettati"', !(await a.visible('#onStart')) && (await a.text('#lobbyHint')) === 'In attesa di altri 2 sospettati', await a.text('#lobbyHint'));
   await b.join(code, 'Bea'); await inLobby(a, 2);
-  check('con 2 giocatori resta disattivato', await a.disabled('#onStart'));
-  check('chi non e\' host non vede "Apri le indagini"', !(await b.visible('#onStart')));
-  check('chi non e\' host legge che si aspetta l\'host', /host/i.test(await b.text('#lobbyHint')), await b.text('#lobbyHint'));
+  check('con 2 giocatori: nessun pulsante, l\'host legge "In attesa di almeno un altro sospettato"', !(await a.visible('#onStart')) && (await a.text('#lobbyHint')) === 'In attesa di almeno un altro sospettato', await a.text('#lobbyHint'));
+  check('chi non e\' host non vede "Apri le indagini" e legge "In attesa dell\'host" con lo stesso conteggio', !(await b.visible('#onStart')) && (await b.text('#lobbyHint')) === 'In attesa dell’host. Serve almeno un altro sospettato.', await b.text('#lobbyHint'));
   await c.join(code, 'Carlo'); await inLobby(a, 3); await inLobby(c, 3);
-  check('con 3 giocatori si attiva', !(await a.disabled('#onStart')));
+  await a.waitFor(() => !document.getElementById('onStart').classList.contains('hidden'), null, 8000, 'il pulsante con 3 collegati');
+  check('con 3 giocatori il pulsante compare (solo all\'host) e il testo cambia', await a.visible('#onStart') && !(await b.visible('#onStart')) && (await a.text('#lobbyHint')) === 'Quando siete tutti, aprite le indagini.' && (await b.text('#lobbyHint')) === 'In attesa che l’host apra le indagini…', [await a.text('#lobbyHint'), await b.text('#lobbyHint')]);
   const rows = await a.texts('#lobbyPlayers .player-row');
   check('sala: nomi, HOST e TU', rows[0].includes('Anna') && rows[0].includes('HOST') && rows[0].includes('TU') && rows[1].includes('Bea') && rows[2].includes('Carlo'), rows);
   check('il codice e\' lo stesso su tutti i telefoni', (await b.text('#lobbyCode')) === code && (await c.text('#lobbyCode')) === code);
@@ -176,10 +176,10 @@ async function s2(h) {
 // ---------------------------------------------------------------------------
 async function s3(h) {
   console.log('\n== S3: disconnessione, tolleranza di 45 s, rientro da un altro telefono ==');
-  const a = await h.newPlayer('Anna'), b = await h.newPlayer('Bea'), c = await h.newPlayer('Carlo');
+  const a = await h.newPlayer('Anna'), b = await h.newPlayer('Bea'), c = await h.newPlayer('Carlo'), d = await h.newPlayer('Dino');
   const code = await a.create('Anna'); const g = game(h, code);
-  await b.join(code, 'Bea'); await c.join(code, 'Carlo'); await inLobby(a, 3);
-  await a.click('#onStart'); await allOn([a, b, c], 'onTurnScreen');
+  await b.join(code, 'Bea'); await c.join(code, 'Carlo'); await d.join(code, 'Dino'); await inLobby(a, 4);
+  await a.click('#onStart'); await allOn([a, b, c, d], 'onTurnScreen');
   await a.answer(1);
   await b.offline();
   await a.settle();
@@ -220,33 +220,34 @@ async function s3(h) {
 // ---------------------------------------------------------------------------
 async function s4(h) {
   console.log('\n== S4: passaggio dell\'host ==');
-  const a = await h.newPlayer('Anna', { random: 0.99 }), b = await h.newPlayer('Bea', { random: 0.99 }), c = await h.newPlayer('Carlo', { random: 0.99 });
+  const a = await h.newPlayer('Anna', { random: 0.99 }), b = await h.newPlayer('Bea', { random: 0.99 }), c = await h.newPlayer('Carlo', { random: 0.99 }), d = await h.newPlayer('Dino', { random: 0.99 });
   const code = await a.create('Anna'); const g = game(h, code);
-  await b.join(code, 'Bea'); await c.join(code, 'Carlo'); await inLobby(a, 3);
-  await a.click('#onStart'); await allOn([a, b, c], 'onTurnScreen');
-  await a.answer(1); await b.answer(2); await c.answer(3);
-  await allOn([a, b, c], 'onSummaryScreen');
+  await b.join(code, 'Bea'); await c.join(code, 'Carlo'); await d.join(code, 'Dino'); await inLobby(a, 4);
+  await a.click('#onStart'); await allOn([a, b, c, d], 'onTurnScreen');
+  await a.answer(1); await b.answer(2); await c.answer(3); await d.answer(4);
+  await allOn([a, b, c, d], 'onSummaryScreen');
   await a.offline(); await b.settle();
   check('l\'host caduto resta host e gli altri leggono che e\' scollegato', g.val('meta/hostSeat') === 'p1' && /host è scollegato/.test(await b.text('#onSummaryHint')), await b.text('#onSummaryHint'));
-  await h.backend.advance(30000); await b.rerender(); await c.rerender(); await b.settle(300);
+  await h.backend.advance(30000); await b.rerender(); await c.rerender(); await d.rerender(); await b.settle(300);
   check('a 30 s nessuno prende il posto di host', g.val('meta/hostSeat') === 'p1' && !(await b.visible('#onToVote')));
-  await h.backend.advance(17000); await b.rerender(); await c.rerender(); await b.settle(400);
+  await h.backend.advance(17000); await b.rerender(); await c.rerender(); await d.rerender(); await b.settle(400);
   check('a 46 s l\'host passa a Bea (entrata prima fra i collegati)', g.val('meta/hostSeat') === 'p2', g.val('meta/hostSeat'));
   check('Bea vede i comandi dell\'host, Carlo no', await b.visible('#onToVote') && !(await c.visible('#onToVote')));
-  await b.click('#onToVote'); await allOn([b, c], 'onVoteScreen');
-  await b.waitFor(() => document.querySelectorAll('#onVoteOptions .vote-option').length === 2, null, 8000, 'opzioni');
+  await b.click('#onToVote'); await allOn([b, c, d], 'onVoteScreen');
+  await b.waitFor(() => document.querySelectorAll('#onVoteOptions .vote-option').length === 3, null, 8000, 'opzioni');
   const impName = await (async () => { for (let i = 0; i < 20 && !g.impostor(); i++) await sleep(100); return g.nameOf(g.impostor()); })();
-  await castVote(b, impName === 'Bea' ? 'Carlo' : impName); await castVote(c, impName === 'Carlo' ? 'Bea' : impName);
+  await castVote(b, impName === 'Bea' ? 'Carlo' : impName); await castVote(c, impName === 'Carlo' ? 'Bea' : impName); await castVote(d, impName === 'Dino' ? 'Bea' : impName);
   await a.online(); await a.settle(300);
   check('Anna, tornata in rete, non e\' piu\' host e vede la votazione in corso', !(await a.visible('#onToVote')) && (await a.screen()) === 'onVoteScreen' && g.val('players/p1/connected') === true, await a.screen());
   await castVote(a, impName === 'Anna' ? 'Bea' : impName);
-  await allOn([a, b, c], 'onResultScreen');
-  for (const p of [a, b, c]) await p.waitFor(() => document.querySelectorAll('#onVotesList .wait-row').length === 3, null, 8000, 'voti');
+  await allOn([a, b, c, d], 'onResultScreen');
+  for (const p of [a, b, c, d]) await p.waitFor(() => document.querySelectorAll('#onVotesList .wait-row').length === 4, null, 8000, 'voti');
   check('il nuovo host ha chiuso il round: verdetto con l\'impostore giusto su tutti', (await a.text('#onImpostor')) === impName && (await c.text('#onImpostor')) === impName && await b.visible('#onContinue') && !(await a.visible('#onContinue')));
 
   // uscita volontaria dell'host in sala
   console.log('-- uscita volontaria');
-  await b.click('#onNewGame'); await allOn([a, b, c], 'onLobbyScreen'); await inLobby(a, 3);
+  await b.click('#onNewGame'); await allOn([a, b, c, d], 'onLobbyScreen'); await inLobby(a, 4);
+  await d.exit(true); await a.settle(300);
   await b.exit(false);
   check('"No, resta" lascia tutto com\'e\'', (await b.screen()) === 'onLobbyScreen' && g.val('meta/hostSeat') === 'p2');
   check('testi di uscita online', (await b.text('#exitQuestion')) === 'Vuoi uscire dalla partita?' && (await b.text('#exitNote')) === 'Gli altri continueranno senza di te.' && (await b.text('#exitStay')) === 'No, resta' && (await b.text('#exitConfirm')) === 'Sì, esci');
@@ -254,7 +255,7 @@ async function s4(h) {
   check('chi esce torna al menù principale', (await b.screen()) === 'menuScreen');
   await a.settle(300);
   check('l\'host passa ad Anna (collegata, entrata prima) e il posto lasciato si libera', g.val('meta/hostSeat') === 'p1' && g.val('players/p2') === null, g.val('meta/hostSeat'));
-  check('Anna ora e\' host e gli altri vedono 2 giocatori', await a.visible('#onStart') && (await c.texts('#lobbyPlayers .player-row')).length === 2);
+  check('Anna ora e\' host (legge che manca un sospettato) e gli altri vedono 2 giocatori', (await a.text('#lobbyHint')) === 'In attesa di almeno un altro sospettato' && (await c.texts('#lobbyPlayers .player-row')).length === 2);
   await c.exit(true); await a.settle(300);
   check('anche un giocatore normale che esce libera il posto', g.val('players/p3') === null && (await c.screen()) === 'menuScreen');
   noErrors(h, 'S4');
@@ -333,12 +334,13 @@ async function s6(h) {
   console.log('-- meno di 3 giocatori');
   await c.offline();
   await a.answer(1); await b.answer(2);
-  await h.backend.advance(46000); await a.rerender(); await a.settle(300);
-  await a.click('#onSkipAbsent');
+  await a.settle(300);
+  check('con 2 collegati su 3 compare l\'avviso con il conto alla rovescia', await a.visible('#fewBanner') && /^\d+ s$/.test(await a.text('#fewCount')), await a.text('#fewCount'));
+  await h.backend.advance(46000); await a.rerender(); await b.rerender();
   await allOn([a, b], 'onLobbyScreen'); await a.settle(300);
   check('si torna in sala con l\'avviso "Giocatori insufficienti"', /insufficienti/.test(await a.text('#lobbyNotice')) && await b.visible('#lobbyNotice'));
   check('l\'assente e\' stato tolto dalla sala; restano 2 giocatori', g.val('players/p3') === null && (await a.texts('#lobbyPlayers .player-row')).length === 2);
-  check('con 2 giocatori non si puo\' avviare', await a.disabled('#onStart'));
+  check('con 2 giocatori il pulsante non compare', !(await a.visible('#onStart')));
   noErrors(h, 'S6');
 }
 
@@ -433,16 +435,17 @@ async function s9(h) {
   check("a 30 s il ruolo non passa e il posto resta", g.val('meta/hostSeat') === 'p1' && g.val('players/p1') !== null);
   await h.backend.advance(17000); await b.rerender(); await c.rerender(); await b.settle(500);
   check("a 47 s l'host passa a Bea (collegata, entrata prima)", g.val('meta/hostSeat') === 'p2', g.val('meta/hostSeat'));
-  check('Bea vede "Apri le indagini", Carlo no', await b.visible('#onStart') && !(await c.visible('#onStart')));
+  check('Bea ha i comandi dell\'host (con 2 collegati: "In attesa di almeno un altro sospettato"), Carlo no', (await b.text('#lobbyHint')) === 'In attesa di almeno un altro sospettato' && (await c.text('#lobbyHint')) === 'In attesa dell’host. Serve almeno un altro sospettato.', [await b.text('#lobbyHint'), await c.text('#lobbyHint')]);
   await b.settle(400);
   check("il nuovo host libera il posto dell'ex host assente", g.val('players/p1') === null && (await b.texts('#lobbyPlayers .player-row')).length === 2 && (await c.texts('#lobbyPlayers .player-row')).length === 2);
-  check("con 2 giocatori non si puo' avviare", await b.disabled('#onStart'));
+  check("con 2 giocatori il pulsante non compare", !(await b.visible('#onStart')));
   await a.online(); await a.settle(400);
   check("l'ex host, tornato in rete, scopre di essere stato rimosso", (await a.screen()) === 'onMenuScreen' && /rimosso/.test(await a.text('#onMenuError')), await a.text('#onMenuError'));
   check("l'ex host non ricrea il posto", g.val('players/p1') === null);
   const d = await h.newPlayer('Dino'); await d.join(code, 'Dino'); await inLobby(b, 3);
   check('un nuovo giocatore occupa il posto liberato', g.val('players/p1/name') === 'Dino');
-  check("con 3 giocatori il nuovo host puo' avviare", !(await b.disabled('#onStart')));
+  await b.waitFor(() => !document.getElementById('onStart').classList.contains('hidden'), null, 8000, 'il pulsante con 3 collegati');
+  check("con 3 giocatori collegati il pulsante compare al nuovo host", await b.visible('#onStart') && !(await c.visible('#onStart')));
   await b.click('#onStart'); await allOn([b, c, d], 'onTurnScreen');
   check('si parte regolarmente con il nuovo host', g.val('meta/round') === 1 && g.val('meta/hostSeat') === 'p2');
   noErrors(h, 'S9', x => x.path.endsWith('/players/p1') && x.keys.join() === 'connected,disconnectedAt');
@@ -455,7 +458,7 @@ async function s10(h) {
   await b.join(code, 'Bea'); await inLobby(a, 2);
   await a.exit(true); await b.settle(300);
   check("l'host esce: il ruolo passa subito a Bea e il posto si libera", g.val('meta/hostSeat') === 'p2' && g.val('players/p1') === null && (await a.screen()) === 'menuScreen');
-  check("la partita non e' orfana: Bea e' host in sala da sola", await b.visible('#onStart') && (await b.texts('#lobbyPlayers .player-row')).length === 1);
+  check("la partita non e' orfana: Bea e' host in sala da sola (nessun pulsante, legge che servono altri 2)", !(await b.visible('#onStart')) && (await b.text('#lobbyHint')) === 'In attesa di altri 2 sospettati' && (await b.texts('#lobbyPlayers .player-row')).length === 1);
   await b.exit(true); await b.settle(300);
   check("l'ultimo giocatore esce: la partita e l'indice vengono cancellati", h.backend.valueAt(`games/${code}`) === null && h.backend.valueAt(`index/${code}`) === null && (await b.screen()) === 'menuScreen');
 
@@ -474,7 +477,125 @@ async function s10(h) {
 }
 
 // ---------------------------------------------------------------------------
-const SCENARIOS = { s1, s2, s3, s4, s5, s6, s7, s8, s9, s10 };
+async function s11(h) {
+  console.log('\n== S11: soglia di 3 collegati in sala, avvio forzato, "Continua" con meno di 3 ==');
+  const a = await h.newPlayer('Anna'), b = await h.newPlayer('Bea'), c = await h.newPlayer('Carlo');
+  const code = await a.create('Anna'); const g = game(h, code);
+  const snap = () => JSON.stringify({ fase: g.val('meta/phase'), round: g.val('meta/round'), avviso: g.val('meta/notice'), seats: g.val('seats'), private: g.val('private') });
+  const force = p => p.page.evaluate(() => { const bt = document.getElementById('onStart'); bt.classList.remove('hidden'); bt.disabled = false; bt.click(); bt.click(); });
+  const btnShown = (p, shown) => p.waitFor(s => document.getElementById('onStart').classList.contains('hidden') !== s, shown, 8000, shown ? 'il pulsante' : 'la scomparsa del pulsante');
+
+  check('host da solo: nessun pulsante, "In attesa di altri 2 sospettati"', !(await a.visible('#onStart')) && (await a.text('#lobbyHint')) === 'In attesa di altri 2 sospettati');
+  const before0 = snap();
+  await force(a); await a.settle(500);
+  check('avvio forzato da solo: nessuna scrittura nel database e nessun round', snap() === before0 && g.val('meta/phase') === 'lobby', snap());
+
+  await b.join(code, 'Bea'); await inLobby(a, 2);
+  check('2 in sala: l\'host legge "In attesa di almeno un altro sospettato"', (await a.text('#lobbyHint')) === 'In attesa di almeno un altro sospettato' && !(await a.visible('#onStart')));
+  check('2 in sala: Bea legge "In attesa dell\'host. Serve almeno un altro sospettato."', (await b.text('#lobbyHint')) === 'In attesa dell’host. Serve almeno un altro sospettato.');
+  const before2 = snap();
+  await force(a); await a.settle(500);
+  check('avvio forzato con 2: nessuna scrittura nel database', snap() === before2, snap());
+  check('avvio forzato con 2: resta in sala, nessun avviso "Giocatori insufficienti", stesso messaggio', (await a.screen()) === 'onLobbyScreen' && !(await a.visible('#lobbyNotice')) && !(await b.visible('#lobbyNotice')) && (await a.text('#lobbyHint')) === 'In attesa di almeno un altro sospettato');
+
+  await c.join(code, 'Carlo'); await inLobby(a, 3);
+  await btnShown(a, true);
+  check('con 3 collegati il pulsante compare solo all\'host', await a.visible('#onStart') && !(await b.visible('#onStart')) && !(await c.visible('#onStart')) && (await b.text('#lobbyHint')) === 'In attesa che l’host apra le indagini…');
+
+  // un giocatore cade (meno di 45 s fa, il posto c'e' ancora): non fa piu' numero
+  await c.offline(); await btnShown(a, false);
+  check('Carlo cade: il pulsante sparisce subito (senza aspettare i 45 s) e la sala mostra ancora 3 righe', !(await a.visible('#onStart')) && g.val('players/p3/connected') === false && (await a.texts('#lobbyPlayers .player-row')).length === 3 && (await a.text('#lobbyHint')) === 'In attesa di almeno un altro sospettato', await a.text('#lobbyHint'));
+  const beforeDrop = snap();
+  await force(a); await a.settle(500);
+  check('avvio forzato con 2 collegati su 3 in sala: nessun round, nessun avviso, niente scritto', snap() === beforeDrop && (await a.screen()) === 'onLobbyScreen', snap());
+  await c.online(); await btnShown(a, true);
+  check('Carlo rientra: il pulsante ricompare', await a.visible('#onStart'));
+
+  // doppio tocco con 3 collegati: parte un solo round
+  await a.page.evaluate(() => { const bt = document.getElementById('onStart'); bt.click(); bt.click(); });
+  await allOn([a, b, c], 'onTurnScreen'); await a.settle(400);
+  check('doppio tocco con 3 collegati: un solo round (1) con 3 partecipanti, nessun avviso', g.val('meta/round') === 1 && Object.keys(g.val('seats')).length === 3 && g.val('meta/notice') === null);
+
+  // round completo, poi "Continua" con meno di 3 collegati: si torna in sala senza bloccarsi
+  for (const p of [a, b, c]) await ready(p);
+  await a.answer(1); await b.answer(2); await c.answer(3);
+  await allOn([a, b, c], 'onSummaryScreen'); await a.click('#onToVote'); await allOn([a, b, c], 'onVoteScreen');
+  const impName = g.nameOf(g.impostor());
+  for (const [n, p] of [['Anna', a], ['Bea', b], ['Carlo', c]]) await castVote(p, n === impName ? (n === 'Anna' ? 'Bea' : 'Anna') : impName);
+  await allOn([a, b, c], 'onResultScreen');
+  await c.offline(); await a.settle(400);
+  check('verdetto con 2 collegati su 3: "Continua" nascosto, "Nuova partita" resta, avviso con conto alla rovescia', !(await a.visible('#onContinue')) && await a.visible('#onNewGame') && await a.visible('#fewBanner'));
+  await a.click('#onNewGame'); await allOn([a, b], 'onLobbyScreen'); await a.settle(400);
+  check('"Nuova partita" con 2 collegati: sala, nessun round avviato, avviso sparito', (await a.screen()) === 'onLobbyScreen' && g.val('meta/phase') === 'lobby' && g.val('seats') === null && !(await a.visible('#fewBanner')));
+  check('in sala nessun pulsante e il messaggio dice cosa manca', !(await a.visible('#onStart')) && (await a.text('#lobbyHint')) === 'In attesa di almeno un altro sospettato');
+  await c.online(); await btnShown(a, true);
+  check('Carlo rientra: il pulsante torna e si puo\' ripartire', await a.visible('#onStart'));
+  await a.click('#onStart'); await allOn([a, b, c], 'onTurnScreen');
+  check('si riparte regolarmente con 3 collegati', g.val('meta/round') === 1 && g.val('meta/notice') === null);
+  noErrors(h, 'S11');
+}
+
+// ---------------------------------------------------------------------------
+async function s12(h) {
+  console.log('\n== S12: meno di 3 collegati in partita: avviso, conto alla rovescia, ritorno in sala ==');
+  const NOTICE = /Sono rimasti meno di 3 sospettati collegati\. Se nessuno rientra entro 45 secondi, si torna in sala d’attesa\./;
+  const secs = async p => parseInt(await p.text('#fewCount'), 10);
+  const a = await h.newPlayer('Anna', { random: 0.99 }), b = await h.newPlayer('Bea', { random: 0.99 }), c = await h.newPlayer('Carlo', { random: 0.99 });
+  const code = await a.create('Anna'); const g = game(h, code);
+  await b.join(code, 'Bea'); await c.join(code, 'Carlo'); await inLobby(a, 3);
+  await a.click('#onStart'); await allOn([a, b, c], 'onTurnScreen');
+  await a.answer(1); await b.answer(2); await c.answer(3);
+  await allOn([a, b, c], 'onSummaryScreen');
+  check('con 3 collegati nessun avviso e "Alle votazioni" per l\'host', !(await a.visible('#fewBanner')) && await a.visible('#onToVote'));
+
+  // 1) cade uno: avviso con conto alla rovescia, "Alle votazioni" nascosto
+  await c.offline(); await a.settle(300);
+  check('Carlo cade: avviso con il testo richiesto su chi e\' ancora collegato', NOTICE.test(await a.text('#fewBanner')) && await a.visible('#fewBanner') && await b.visible('#fewBanner'), await a.text('#fewBanner'));
+  const s0 = await secs(a);
+  check('il conto alla rovescia parte da circa 45 s', s0 > 40 && s0 <= 45, s0);
+  check('"Alle votazioni" nascosto all\'host mentre ci sono meno di 3 collegati', !(await a.visible('#onToVote')));
+  await h.backend.advance(20000); await a.rerender(); await a.settle(300);
+  const s1 = await secs(a);
+  check('dopo 20 s il conto e\' sceso a circa 25', s1 > 20 && s1 < 30, s1);
+
+  // 2) rientra: l'avviso sparisce e il pulsante torna
+  await c.online(); await a.settle(400);
+  check('Carlo rientra: avviso sparito e "Alle votazioni" torna', !(await a.visible('#fewBanner')) && !(await b.visible('#fewBanner')) && await a.visible('#onToVote'));
+
+  // 3) ricade: il conto riparte da 45 (si e' azzerato)
+  await c.offline(); await a.settle(300);
+  const s2 = await secs(a);
+  check('ricade: il conto riparte da circa 45', s2 > 40 && s2 <= 45, s2);
+  await h.backend.advance(30000); await a.rerender(); await a.settle(300);
+  check('a 30 s il round e\' ancora in corso', g.val('meta/phase') === 'summary' && await a.visible('#fewBanner'));
+  await h.backend.advance(17000); await a.rerender(); await b.rerender();
+  await allOn([a, b], 'onLobbyScreen'); await a.settle(300);
+  check('a 47 s l\'host riporta tutti in sala da solo, con "Giocatori insufficienti"', g.val('meta/phase') === 'lobby' && /insufficienti/.test(await a.text('#lobbyNotice')) && await b.visible('#lobbyNotice'));
+  check('in sala l\'avviso di round non compare e l\'assente e\' stato tolto', !(await a.visible('#fewBanner')) && g.val('players/p3') === null);
+  noErrors(h, 'S12a');
+}
+
+async function s12b(h) {
+  console.log('\n== S12b: cade l\'host e restano meno di 3: passaggio di host, poi ritorno in sala subito ==');
+  const a = await h.newPlayer('Anna', { random: 0.99 }), b = await h.newPlayer('Bea', { random: 0.99 }), c = await h.newPlayer('Carlo', { random: 0.99 });
+  const code = await a.create('Anna'); const g = game(h, code);
+  await b.join(code, 'Bea'); await c.join(code, 'Carlo'); await inLobby(a, 3);
+  await a.click('#onStart'); await allOn([a, b, c], 'onTurnScreen');
+  await a.answer(1); await b.answer(2); await c.answer(3);
+  await allOn([a, b, c], 'onSummaryScreen'); await a.click('#onToVote'); await allOn([a, b, c], 'onVoteScreen');
+  await a.offline(); await b.settle(300);
+  check('cade l\'host in votazione: Bea e Carlo vedono l\'avviso', await b.visible('#fewBanner') && await c.visible('#fewBanner'));
+  await h.backend.advance(30000); await b.rerender(); await c.rerender(); await b.settle(300);
+  check('a 30 s tutto fermo: host ancora Anna, round in corso', g.val('meta/hostSeat') === 'p1' && g.val('meta/phase') === 'vote');
+  await h.backend.advance(17000);
+  for (let i = 0; i < 4; i++) { await b.rerender(); await c.rerender(); await b.settle(400); }
+  await allOn([b, c], 'onLobbyScreen');
+  check('l\'host passa a Bea e subito dopo si torna in sala con l\'avviso', g.val('meta/hostSeat') === 'p2' && g.val('meta/phase') === 'lobby' && /insufficienti/.test(await b.text('#lobbyNotice')) && await c.visible('#lobbyNotice'), g.val('meta/hostSeat'));
+  noErrors(h, 'S12b');
+}
+
+// ---------------------------------------------------------------------------
+const SCENARIOS = { s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s12b };
 (async () => {
   const want = process.argv.slice(2).map(s => s.toLowerCase());
   const run = Object.keys(SCENARIOS).filter(k => !want.length || want.includes(k));

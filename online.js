@@ -34,7 +34,7 @@ let app = null, auth = null, db = null, uid = null, offset = 0;
 let S = null;                 // sessione: { code, seat, name }
 let D = {};                   // dati ricevuti dai listener
 let unsubs = [], gated = {}, gatedRetry = {}, hostUnsub = null;
-let ticker = null, renderQueued = false, hostRetry = 0;
+let ticker = null, renderQueued = false, hostRetry = 0, fewTimer = null, fewDeadline = null;
 let connected = true, busy = false, claiming = false, leaving = false, lastFail = 0;
 let curScreen = null;
 const ui = { vote: null, optKey: '', turnRound: null };
@@ -221,6 +221,7 @@ function detach() {
   Object.values(gated).forEach(u => u()); gated = {}; gatedRetry = {};
   if (hostUnsub) { hostUnsub(); hostUnsub = null; }
   if (ticker) { clearInterval(ticker); ticker = null; }
+  stopFew();
 }
 
 function resetLocal(msg) {
@@ -272,7 +273,40 @@ async function cleanupStale() {
 // ---------- ruoli e presenze ----------
 const isHost = () => !!(S && D.meta && D.meta.hostSeat === S.seat);
 const seatsOf = () => SEATS.filter(s => D.players && D.players[s]);
+const connectedSeats = () => seatsOf().filter(s => D.players[s].connected === true);
 const roundSeats = () => SEATS.filter(s => D.seats && D.seats[s]);
+const roundConnected = () => roundSeats().filter(s => D.players[s] && D.players[s].connected === true);
+
+// ---------- meno di 3 collegati durante il round ----------
+// La scadenza (45 s) parte da quando i collegati sono scesi sotto 3: cioe' dalla (N-2)-esima disconnessione tra i posti del round.
+function computeFewDeadline() {
+  if (!D.meta || D.meta.phase === 'lobby') return null;
+  const seats = roundSeats();
+  if (seats.length < MIN_PLAYERS || roundConnected().length >= MIN_PLAYERS) return null;
+  const times = seats.filter(s => !(D.players[s] && D.players[s].connected === true))
+    .map(s => (D.players[s] && typeof D.players[s].disconnectedAt === 'number') ? D.players[s].disconnectedAt : now())
+    .sort((a, b) => a - b);
+  return times[seats.length - MIN_PLAYERS] + GRACE;
+}
+function paintFew() {
+  if (fewDeadline == null) return;
+  $('fewCount').textContent = `${Math.max(0, Math.ceil((fewDeadline - now()) / 1000))} s`;
+}
+function updateFew() {
+  fewDeadline = computeFewDeadline();
+  $('fewBanner').classList.toggle('hidden', fewDeadline == null);
+  if (fewDeadline == null) { stopFew(); return; }
+  paintFew();
+  if (!fewTimer) fewTimer = setInterval(() => {
+    paintFew();
+    if (fewDeadline != null && now() > fewDeadline + MARGIN) scheduleRender();
+  }, 1000);
+}
+function stopFew() {
+  if (fewTimer) { clearInterval(fewTimer); fewTimer = null; }
+  fewDeadline = null;
+  const b = document.getElementById('fewBanner'); if (b) b.classList.add('hidden');
+}
 const hostAwayMsg = () => { const hp = D.players[D.meta.hostSeat]; return hp && hp.connected === false && !isHost() ? 'L’host è scollegato. Se non rientra a breve, un altro giocatore prenderà il suo posto.' : ''; };
 const nameOf = s => (D.players && D.players[s] && D.players[s].name) || s;
 function isAbsent(p, grace = GRACE) { return !!p && p.connected === false && typeof p.disconnectedAt === 'number' && now() - p.disconnectedAt > grace; }
@@ -332,6 +366,7 @@ function render() {
   if (!me) { endSession('Sei stato rimosso dalla partita.'); return; }
   if (me.owner !== uid) { endSession('Il tuo posto è stato ripreso da un altro telefono.'); return; }
   syncGated();
+  updateFew();
   if (D.meta.phase !== 'vote') { ui.vote = null; ui.optKey = ''; }
   switch (D.meta.phase) {
     case 'lobby': renderLobby(); break;
@@ -362,14 +397,16 @@ function renderLobby() {
     list.append(row);
   });
   $('lobbyCount').textContent = `${seats.length} / 7`;
-  const active = seats.filter(s => !isAbsent(D.players[s])).length;
+  // contano solo i giocatori COLLEGATI adesso: chi e' appena caduto non fa numero
+  const missing = Math.max(0, MIN_PLAYERS - connectedSeats().length);
   const host = isHost();
   const start = $('onStart');
-  start.classList.toggle('hidden', !host);
-  start.disabled = active < MIN_PLAYERS;
+  start.classList.toggle('hidden', !(host && missing === 0));
+  start.disabled = false;
+  const need = missing === 1 ? 'almeno un altro sospettato' : `altri ${missing} sospettati`;
   $('lobbyHint').textContent = host
-    ? (active < MIN_PLAYERS ? 'Servono da 3 a 7 giocatori per aprire le indagini.' : 'Quando siete tutti, aprite le indagini.')
-    : (hostAwayMsg() || 'In attesa che l’host apra le indagini…');
+    ? (missing === 0 ? 'Quando siete tutti, aprite le indagini.' : `In attesa di ${need}`)
+    : (hostAwayMsg() || (missing === 0 ? 'In attesa che l’host apra le indagini…' : `In attesa dell’host. ${missing === 1 ? 'Serve' : 'Servono'} ${need}.`));
   const n = D.meta.notice;
   say('lobbyNotice', n && n.code === 'few' ? 'Giocatori insufficienti: si torna alla sala d’attesa.' : '');
 }
@@ -414,7 +451,7 @@ function renderTurn() {
     $('onMyAnswer').textContent = D.myAnswer == null ? '…' : D.myAnswer;
     const list = $('onWaitList'); list.textContent = '';
     seats.forEach(s => list.append(waitRow(s, D.answered)));
-    const miss = isHost() ? missingAbsent(D.answered) : null;
+    const miss = isHost() && D.hostOnly ? missingAbsent(D.answered) : null;
     $('onSkipAbsent').classList.toggle('hidden', !miss);
     $('onWaitHint').textContent = hostAwayMsg();
   }
@@ -430,7 +467,7 @@ function renderSummary() {
     list.append(row);
   });
   const host = isHost();
-  $('onToVote').classList.toggle('hidden', !host);
+  $('onToVote').classList.toggle('hidden', !(host && fewDeadline == null));
   $('onSummaryHint').textContent = host ? '' : (hostAwayMsg() || 'In attesa che l’host apra le votazioni…');
 }
 
@@ -463,7 +500,7 @@ function renderVote() {
   if (!(inRound && !voted)) {
     const list = $('onVoteWaitList'); list.textContent = '';
     seats.forEach(s => list.append(waitRow(s, D.voted)));
-    $('onSkipAbsentV').classList.toggle('hidden', !(isHost() && missingAbsent(D.voted)));
+    $('onSkipAbsentV').classList.toggle('hidden', !(isHost() && D.hostOnly && missingAbsent(D.voted)));
     $('onVoteHint').textContent = hostAwayMsg();
   }
 }
@@ -488,7 +525,7 @@ function tally() {
 function renderResult() {
   show('onResult');
   const host = isHost();
-  $('onContinue').classList.toggle('hidden', !host);
+  $('onContinue').classList.toggle('hidden', !(host && fewDeadline == null));
   $('onNewGame').classList.toggle('hidden', !host);
   $('onResultHint').textContent = host ? '' : (hostAwayMsg() || 'In attesa dell’host…');
   if (!D.result || D.result.round !== D.meta.round || !D.votes || !D.seats) {
@@ -557,7 +594,9 @@ async function hostRun(fn) {
 function hostDuties() {
   if (!isHost() || busy || Date.now() - lastFail < 5000) return;
   const ph = D.meta.phase, seats = roundSeats();
-  if (ph === 'lobby') {
+  if (ph !== 'lobby' && fewDeadline != null && now() > fewDeadline + MARGIN) {
+    hostRun(() => toLobbyNow({ code: 'few', round: D.meta.round || 0 }));
+  } else if (ph === 'lobby') {
     // in sala i posti di chi e' assente da piu' di 45 s si liberano (anche quello di un ex host)
     const gone = seatsOf().filter(x => x !== S.seat && isAbsent(D.players[x], GRACE + MARGIN));
     if (gone.length) hostRun(() => update(ref(db), Object.fromEntries(gone.map(x => [`${base()}/players/${x}`, null]))));
@@ -577,8 +616,13 @@ const setPhase = ph => update(ref(db), { [`${base()}/meta/phase`]: ph, [`index/$
 function startRound(notice) {
   return hostRun(async () => {
     const B = base();
-    const parts = seatsOf().filter(s => !isAbsent(D.players[s]));
-    if (parts.length < MIN_PLAYERS) { await toLobbyNow({ code: 'few', round: D.meta.round || 0 }); return; }
+    // un round parte solo con giocatori COLLEGATI adesso (chi e' appena caduto resta fuori e rientra al round dopo)
+    const parts = connectedSeats();
+    if (parts.length < MIN_PLAYERS) {
+      // dalla sala: non si fa niente (il messaggio "In attesa di..." e' gia' sullo schermo); da un round finito: si torna in sala
+      if (D.meta.phase !== 'lobby') await toLobbyNow({ code: 'few', round: D.meta.round || 0 });
+      return;
+    }
     const q = M.pickQuestion();
     if (!q) throw new Error('nessuna domanda disponibile');
     const prev = D.hostOnly && D.hostOnly.impostor;
@@ -616,7 +660,8 @@ const toLobby = notice => hostRun(() => toLobbyNow(notice));
 
 function excludeAbsent(doneMap) {
   const missing = missingAbsent(doneMap);
-  if (!missing) return;
+  // un nuovo host non sa ancora chi e' l'impostore finche' non legge hostOnly: senza quel dato non si esclude nessuno
+  if (!missing || !D.hostOnly) return;
   const remaining = roundSeats().filter(s => !missing.includes(s));
   if (remaining.length < MIN_PLAYERS) { toLobby({ code: 'few', round: D.meta.round || 0 }); return; }
   if (D.hostOnly && missing.includes(D.hostOnly.impostor)) { startRound({ code: 'vanished' }); return; }

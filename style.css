@@ -358,6 +358,8 @@ button{ touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color
 .notice{ margin:12px 0 0; padding:9px 11px; border:1px solid var(--stamp); border-radius:4px;
   background: var(--stamp-bg); color: var(--stamp-ink);
   font-family: var(--mono); font-size:11px; letter-spacing:.04em; line-height:1.45; }
+.few-banner{ margin:0 0 8px; }
+.few-count{ white-space:nowrap; }
 .net-banner{ margin:0 0 8px; padding:7px 10px; border:1px dashed var(--stamp); border-radius:4px;
   text-align:center; font-family: var(--mono); font-size:10px; letter-spacing:.06em; color:#d98a85; }
 .votes-card{ margin:14px 0 4px; padding:14px; border:1.5px dashed var(--paper-line); border-radius:9px;

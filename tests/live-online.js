@@ -280,7 +280,8 @@ async function l3() {
   T('subito dopo la caduta il ruolo di host non e\' ancora passato', early.hostSeat === 'p1');
   await sleep(Math.max(0, 22000 - (Date.now() - t0)));
   T('a ~22 s dalla caduta il ruolo non e\' ancora passato (tolleranza)', (await gread(b, code, 'meta')).value.hostSeat === 'p1' && !(await b.visible('#onStart')));
-  await b.waitFor(() => !document.getElementById('onStart').classList.contains('hidden'), null, 150000, 'il ruolo di host');
+  // con 2 collegati il nuovo host non ha il pulsante: riconosco il passaggio dal suo messaggio ("In attesa di almeno un altro sospettato")
+  await b.waitFor(() => document.getElementById('lobbyHint').textContent === 'In attesa di almeno un altro sospettato', null, 150000, 'il ruolo di host');
   const tHost = Math.round((Date.now() - t0) / 1000);
   const meta = (await gread(b, code, 'meta')).value;
   T(`il ruolo passa a Bea dopo ${tHost} s dalla caduta (soglia 45 s + rilevamento)`, meta.hostSeat === 'p2' && tHost >= 45, { hostSeat: meta.hostSeat, secondi: tHost });
@@ -290,6 +291,7 @@ async function l3() {
   T('il nuovo host libera il posto dell\'ex host assente', (await gread(b, code, 'players/p1')).value === null && (await c.texts('#lobbyPlayers .player-row')).length === 2);
   const d = await phone('Dino'); d.name = 'Dino'; await d.join(code, 'Dino'); await inLobby(b, 3);
   T('un nuovo giocatore occupa il posto liberato', (await gread(b, code, 'players/p1')).value.name === 'Dino');
+  await b.waitFor(() => !document.getElementById('onStart').classList.contains('hidden'), null, undefined, 'il pulsante con 3 collegati');
   await b.click('#onStart'); await allOn([b, c, d], 'onTurnScreen');
   T('si parte regolarmente con il nuovo host', (await gread(b, code, 'meta')).value.round === 1);
   for (const p of [b, c, d]) await ready(p);
@@ -311,15 +313,15 @@ async function l3() {
 async function l4() {
   const T = tagger('L4');
   console.log('\n== L4: posto ripreso da un altro telefono dopo 45 s reali ==');
-  const a = await phone('Anna'), b = await phone('Bea'), c = await phone('Carlo');
-  [a, b, c].forEach((p, i) => { p.name = ['Anna', 'Bea', 'Carlo'][i]; });
+  const a = await phone('Anna'), b = await phone('Bea'), c = await phone('Carlo'), d = await phone('Dino');
+  [a, b, c, d].forEach((p, i) => { p.name = ['Anna', 'Bea', 'Carlo', 'Dino'][i]; });
   const code = await a.create('Anna'); track('L4', code);
-  await b.join(code, 'Bea'); await c.join(code, 'Carlo'); await inLobby(a, 3);
-  await a.click('#onStart'); await allOn([a, b, c], 'onTurnScreen'); for (const p of [a, b, c]) await ready(p);
+  await b.join(code, 'Bea'); await c.join(code, 'Carlo'); await d.join(code, 'Dino'); await inLobby(a, 4);
+  await a.click('#onStart'); await allOn([a, b, c, d], 'onTurnScreen'); for (const p of [a, b, c, d]) await ready(p);
   const oldUid = await L.uidOf(c);
   const t0 = Date.now();
   c.alive = false; await c.page.close();
-  await a.answer(1); await b.answer(2);
+  await a.answer(1); await b.answer(2); await d.answer(4);
   const x = await phone('Carlo2'); x.name = 'Carlo';
   await x.goOnline(); await x.type('#onName', 'carlo'); await x.type('#onCode', code); await x.click('#onJoin');
   await x.waitFor(() => !document.getElementById('onMenuError').classList.contains('hidden'), null, undefined, 'messaggio');
@@ -341,18 +343,18 @@ async function l4() {
   T('il nuovo telefono legge la domanda privata di quel posto', (await x.text('#onQuestion')).length > 0);
   await mustDeny(T, 'il vecchio proprietario (uid) non puo\' piu\' scrivere nel posto', a, "await D.update(D.ref(db, arg.path), { connected: false }); return true;", { path: `games/${code}/players/p3` });
   await x.answer(3);
-  await allOn([a, b, x], 'onSummaryScreen'); await summaryReady([a, b, x], 3);
-  T('il round prosegue con il nuovo telefono: riepilogo con tre risposte', (await a.texts('#onAnswers .answer-row')).join('|') === 'Anna1|Bea2|Carlo3');
-  await a.click('#onToVote'); await allOn([a, b, x], 'onVoteScreen');
+  await allOn([a, b, d, x], 'onSummaryScreen'); await summaryReady([a, b, d, x], 4);
+  T('il round prosegue con il nuovo telefono: riepilogo con quattro risposte', (await a.texts('#onAnswers .answer-row')).join('|') === 'Anna1|Bea2|Carlo3|Dino4');
+  await a.click('#onToVote'); await allOn([a, b, d, x], 'onVoteScreen');
   const impSeat = (await gread(a, code, 'hostOnly')).value.impostor;
   const impName = (await gread(a, code, 'players')).value[impSeat].name;
-  const ps = [a, b, x];
+  const ps = [a, b, d, x];
   for (const p of ps) await castVote(p, p.name === impName ? ps.find(q => q !== p).name : impName);
   await allOn(ps, 'onResultScreen'); await resultReady(ps);
   T('verdetto su tutti i telefoni', (await a.text('#onImpostor')) === impName && (await x.text('#onImpostor')) === impName);
   T('pagine senza errori', ps.every(p => p.errors.length === 0), ps.flatMap(p => p.errors));
   await dispose(T, ps, code);
-  console.log(`   utenti anonimi cancellati: ${await cleanupUsers([a, b, c, x])}`);
+  console.log(`   utenti anonimi cancellati: ${await cleanupUsers([a, b, c, d, x])}`);
 }
 
 async function l5() {
