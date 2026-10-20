@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mr Question? — riferimento stile "party dossier" (approvato)</title>
+<!--
+  FILE DI RIFERIMENTO VISIVO, NON FA PARTE DELL'APP.
+  Approvato dall'utente: è la direzione da seguire.
+  Valori da riprendere come token (variabili CSS) nell'app:
+    fondo         radial-gradient(120% 70% at 50% 0%, #3b1a17 0%, #22110f 55%, #150d0b 100%)
+    testo         #fff6e6
+    tessera       sfondo rgba(255,246,230,.08), bordo 1.5px rgba(255,246,230,.12), raggio 20px
+    tessera "tu"  bordo #f2c51c, sfondo rgba(242,197,28,.14)
+    tessera vuota bordo tratteggiato
+    selezione     bordo 2px #f05a4e, sfondo rgba(240,90,78,.16)  (voto)
+    numero posto  cerchio 20px #fff6e6, testo #22110f
+    spunta        #4fbf73
+    timbro        #f05a4e, bordo 2px, inclinato 5deg (CASO APERTO / CASO CHIUSO)
+    pulsante princ. giallo #f2c51c, testo #22110f, raggio 20px, alto 56px, ombra 0 5px 0 #a87f0c
+    pulsante second. sfondo rgba(255,246,230,.1), bordo 1.5px rgba(255,246,230,.16), raggio 20px
+    scheda dossier avorio #efe7d6, testo #2b2620, raggio 22px, etichette in rosso #8d2420
+    titoli        800, ~27px, letter-spacing -.03em, seconda riga in giallo #f2c51c
+    etichette     carattere macchina da scrivere (Special Elite), maiuscolo, spaziato
+    avatar        sagoma del detective, un colore per posto:
+                  p1 #f2c51c  p2 #ff7a59  p3 #5ec8c2  p4 #b48cff  (p5–p7 da proporre)
+  Segnaposto in questo file: i caratteri ⏎ e ⚙ e le icone × ? vanno resi con SVG a tratto.
+  I pulsanti tondi qui sono 36px: nell'app l'area di tocco deve essere almeno 44px.
+  "deve rispondere" sostituisce "sta scrivendo" (l'app non sa chi sta scrivendo).
+-->
+<style>
+body{margin:0;padding:24px 12px;background:#0d0908;font-family:-apple-system,BlinkMacSystemFont,'Inter',system-ui,sans-serif}
+.cap{font-family:'Special Elite','Courier New',monospace;font-size:11px;letter-spacing:.14em;color:#a8957a;text-align:center;margin:0 0 8px}
+.phone{max-width:320px;margin:0 auto 28px;border-radius:30px;padding:16px 14px 18px;background:radial-gradient(120% 70% at 50% 0%,#3b1a17 0%,#22110f 55%,#150d0b 100%);color:#fff6e6;position:relative;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.rbtn{width:36px;height:36px;border-radius:50%;background:rgba(255,246,230,.12);display:grid;place-items:center;font-size:16px;font-weight:700;color:#fff6e6}
+.stamp{font-family:'Special Elite','Courier New',monospace;font-size:10px;letter-spacing:.08em;color:#f05a4e;border:2px solid #f05a4e;border-radius:4px;padding:2px 6px;transform:rotate(5deg)}
+.mono{font-family:'Special Elite','Courier New',monospace;letter-spacing:.14em}
+h2{margin:0;font-size:27px;font-weight:800;letter-spacing:-.03em;line-height:1.05;text-align:center}
+.y{color:#f2c51c}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.tile{background:rgba(255,246,230,.08);border:1.5px solid rgba(255,246,230,.12);border-radius:20px;padding:10px 8px 9px;text-align:center;position:relative}
+.tile.me{border-color:#f2c51c;background:rgba(242,197,28,.14)}
+.tile.empty{border-style:dashed;background:transparent;color:rgba(255,246,230,.45)}
+.tile.sel{border:2px solid #f05a4e;background:rgba(240,90,78,.16)}
+.badge{position:absolute;top:7px;left:8px;width:20px;height:20px;border-radius:50%;background:#fff6e6;color:#22110f;font-size:11px;font-weight:800;display:grid;place-items:center}
+.ok{position:absolute;top:7px;right:8px;width:20px;height:20px;border-radius:50%;background:#4fbf73;color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center}
+.chk{position:absolute;top:7px;right:8px;width:20px;height:20px;border-radius:50%;background:#f05a4e;color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center}
+.av{width:52px;height:54px;margin:2px auto 4px;display:block}
+.name{font-size:14px;font-weight:700}
+.cta{margin-top:14px;min-height:56px;border-radius:20px;background:#f2c51c;color:#22110f;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 5px 0 #a87f0c}
+.ghost{margin-top:9px;min-height:50px;border-radius:20px;background:rgba(255,246,230,.1);border:1.5px solid rgba(255,246,230,.16);font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center}
+.codebox{margin:12px auto 0;background:#fff6e6;color:#22110f;border-radius:20px;padding:10px 12px;text-align:center}
+.code{font-family:'Special Elite','Courier New',monospace;font-size:32px;font-weight:700;letter-spacing:.22em}
+.card{background:#efe7d6;color:#2b2620;border-radius:22px;padding:14px}
+.row{display:flex;align-items:center;gap:10px;background:rgba(255,246,230,.08);border:1.5px solid rgba(255,246,230,.12);border-radius:18px;padding:8px 12px 8px 8px}
+.row svg{width:38px;height:39px;flex-shrink:0}
+.row .name{flex:1}
+.num{font-family:'Special Elite','Courier New',monospace;font-size:24px;font-weight:700;color:#f2c51c}
+.mode{display:flex;align-items:center;gap:12px;border-radius:22px;padding:14px;margin-top:10px;text-align:left}
+.mode .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex-shrink:0}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="mqD" viewBox="0 0 200 205">
+<path d="M62 62 C62 44 66 26 72 19 C78 13 90 15 100 19 C110 15 122 13 128 19 C134 26 138 44 138 62 Z"/>
+<path d="M20 70 C11 66 13 59 24 60 C40 57 64 55 100 55 C136 55 160 57 176 60 C187 59 189 66 180 70 C160 77 136 80 100 80 C64 80 40 77 20 70 Z"/>
+<path d="M62 76 L138 76 L138 120 L162 107 L152 150 C178 154 196 164 198 182 L198 200 L2 200 L2 182 C4 164 22 154 48 150 L38 107 L62 120 Z"/>
+</symbol>
+<symbol id="mqQ" viewBox="0 0 200 205">
+<path d="M73 94 C73 72 87 62 102 62 C120 62 131 74 131 90 C131 105 121 112 114 118 C110 122 110 126 110 133 L90 133 C90 121 93 114 101 107 C107 101 111 97 111 90 C111 83 107 79 101 79 C95 79 92 85 92 94 Z"/>
+<rect x="89" y="143" width="21" height="21" rx="3"/>
+</symbol>
+</defs>
+</svg>
+
+<p class="cap">1 · MENÙ INIZIALE</p>
+<div class="phone">
+  <div class="top"><div style="width:36px"></div><div class="stamp">CASO APERTO</div><div class="rbtn" style="font-size:15px">⚙</div></div>
+  <svg width="128" height="140" viewBox="-6 -4 214 236" style="display:block;margin:6px auto 4px">
+    <ellipse cx="104" cy="214" rx="104" ry="9" fill="#000" opacity=".35"/>
+    <use href="#mqD" fill="#a87f0c" transform="translate(4,7)"/><use href="#mqD" fill="#a87f0c" transform="translate(2,3)"/>
+    <use href="#mqD" fill="#f2c51c"/><use href="#mqQ" fill="#22110f"/>
+  </svg>
+  <div style="text-align:center;font-family:'Special Elite','Courier New',monospace;font-size:26px;font-weight:700;letter-spacing:.02em;margin-top:6px">MR QUESTION<span style="color:#f05a4e">?</span></div>
+  <div class="mono" style="text-align:center;font-size:10px;color:rgba(255,246,230,.6);margin:14px 0 2px">SCEGLI MODALITÀ</div>
+  <div class="mode" style="background:#f2c51c;color:#22110f;box-shadow:0 5px 0 #a87f0c">
+    <div class="ic" style="background:rgba(34,17,15,.12)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22110f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5"/><path d="M15 14.5c2.6 0 5 1.6 5 4.5"/></svg></div>
+    <div><div style="font-size:18px;font-weight:800">Party online</div><div style="font-size:12px;font-weight:600;opacity:.7">Ognuno col suo telefono</div></div>
+  </div>
+  <div class="mode" style="background:rgba(255,246,230,.08);border:1.5px solid rgba(255,246,230,.14)">
+    <div class="ic" style="background:rgba(255,246,230,.1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff6e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></div>
+    <div><div style="font-size:18px;font-weight:800">Un solo telefono</div><div style="font-size:12px;font-weight:600;opacity:.6">Ve lo passate di mano</div></div>
+  </div>
+</div>
+
+<p class="cap">2 · SALA D'ATTESA</p>
+<div class="phone">
+  <div class="top"><div class="rbtn">×</div><div class="stamp">CASO APERTO</div><div class="rbtn">?</div></div>
+  <h2>Sospettati<br>convocati</h2>
+  <div class="codebox"><div class="mono" style="font-size:9px;color:#8a6a45">CODICE DEL CASO</div><div class="code">KXRMB</div></div>
+  <div class="grid">
+    <div class="tile me"><span class="badge">1</span><svg class="av"><use href="#mqD" fill="#f2c51c"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Daniele</div></div>
+    <div class="tile"><span class="badge">2</span><svg class="av"><use href="#mqD" fill="#ff7a59"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Giulia</div></div>
+    <div class="tile"><span class="badge">3</span><svg class="av"><use href="#mqD" fill="#5ec8c2"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Marco</div></div>
+    <div class="tile empty"><svg class="av" style="opacity:.35"><use href="#mqD" fill="#fff6e6"/></svg><div class="name" style="font-weight:600">In arrivo…</div></div>
+  </div>
+  <div class="cta">Apri le indagini <span style="font-size:19px">⏎</span></div>
+</div>
+
+<p class="cap">3 · IL TUO FASCICOLO (scorri per aprire)</p>
+<div class="phone">
+  <div class="top"><div class="rbtn">×</div><div class="mono" style="font-size:10px;color:rgba(255,246,230,.7)">ROUND 1</div><div class="rbtn">?</div></div>
+  <div style="background:#efe7d6;border-radius:24px;padding:18px 14px 16px;color:#2b2620;text-align:center;position:relative">
+    <div class="mono" style="font-size:9px;color:#8d2420">FASCICOLO RISERVATO · SOLO PER TE</div>
+    <svg width="120" height="124" viewBox="0 0 200 205" style="margin:12px auto 6px;display:block"><use href="#mqD" fill="#a87f0c" transform="translate(3,5)"/><use href="#mqD" fill="#f2c51c"/><use href="#mqQ" fill="#2b2620"/></svg>
+    <div style="font-size:24px;font-weight:800;letter-spacing:-.03em">Daniele</div>
+    <div style="margin:14px auto 0;width:44px;height:5px;border-radius:9px;background:#c9b88e"></div>
+    <div style="margin-top:9px;font-size:13px;font-weight:700;color:#5a4d35">↑ Scorri per aprire il fascicolo</div>
+  </div>
+  <div style="margin-top:14px;text-align:center;font-size:12px;color:rgba(255,246,230,.65)">Copri lo schermo. La domanda è solo tua.</div>
+</div>
+
+<p class="cap">4 · CHI HA DEPOSTO</p>
+<div class="phone">
+  <div class="top"><div class="rbtn">×</div><div class="stamp">CASO APERTO</div><div class="rbtn">?</div></div>
+  <h2>In attesa delle<br><span class="y">deposizioni</span></h2>
+  <div class="grid">
+    <div class="tile"><span class="badge">1</span><span class="ok">✓</span><svg class="av"><use href="#mqD" fill="#f2c51c"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Daniele</div></div>
+    <div class="tile"><span class="badge">2</span><span class="ok">✓</span><svg class="av"><use href="#mqD" fill="#ff7a59"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Giulia</div></div>
+    <div class="tile" style="opacity:.6"><span class="badge">3</span><svg class="av"><use href="#mqD" fill="#5ec8c2"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Marco</div><div class="mono" style="font-size:9px;margin-top:3px;color:rgba(255,246,230,.7)">DEVE RISPONDERE</div></div>
+    <div class="tile"><span class="badge">4</span><span class="ok">✓</span><svg class="av"><use href="#mqD" fill="#b48cff"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Sara</div></div>
+  </div>
+  <div style="margin-top:14px;background:rgba(255,246,230,.08);border-radius:18px;padding:12px;text-align:center;font-size:13px;font-weight:600">3 su 4 hanno messo a verbale</div>
+</div>
+
+<p class="cap">5 · RIEPILOGO</p>
+<div class="phone">
+  <div class="top"><div class="rbtn">×</div><div class="stamp">CASO APERTO</div><div class="rbtn">?</div></div>
+  <h2>Confrontate le<br><span class="y">deposizioni</span></h2>
+  <div class="card" style="margin-top:14px">
+    <div class="mono" style="font-size:9px;color:#8d2420">LA DOMANDA UFFICIALE</div>
+    <div style="font-size:17px;font-weight:800;line-height:1.25;margin-top:6px">Quanti caffè bevi in una giornata normale?</div>
+  </div>
+  <div style="display:grid;gap:7px;margin-top:10px">
+    <div class="row"><svg viewBox="0 0 200 205"><use href="#mqD" fill="#f2c51c"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Daniele</div><div class="num">3</div></div>
+    <div class="row"><svg viewBox="0 0 200 205"><use href="#mqD" fill="#ff7a59"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Giulia</div><div class="num">2</div></div>
+    <div class="row"><svg viewBox="0 0 200 205"><use href="#mqD" fill="#5ec8c2"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Marco</div><div class="num">7</div></div>
+    <div class="row"><svg viewBox="0 0 200 205"><use href="#mqD" fill="#b48cff"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Sara</div><div class="num">2</div></div>
+  </div>
+  <div class="cta">Alle votazioni</div>
+</div>
+
+<p class="cap">6 · VOTO</p>
+<div class="phone">
+  <div class="top"><div class="rbtn">×</div><div class="stamp">CASO APERTO</div><div class="rbtn">?</div></div>
+  <h2>Chi vi<br><span class="y">insospettisce?</span></h2>
+  <div style="text-align:center;font-size:12px;color:rgba(255,246,230,.65);margin-top:6px">Tocca il sospettato da accusare</div>
+  <div class="grid">
+    <div class="tile"><span class="badge">2</span><svg class="av"><use href="#mqD" fill="#ff7a59"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Giulia</div></div>
+    <div class="tile sel"><span class="badge">3</span><span class="chk">✓</span><svg class="av"><use href="#mqD" fill="#5ec8c2"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Marco</div></div>
+    <div class="tile"><span class="badge">4</span><svg class="av"><use href="#mqD" fill="#b48cff"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Sara</div></div>
+  </div>
+  <div class="cta">Firma l'accusa a Marco</div>
+</div>
+
+<p class="cap">7 · VERDETTO</p>
+<div class="phone">
+  <div class="top"><div style="width:36px"></div><div class="stamp">CASO CHIUSO</div><div class="rbtn">?</div></div>
+  <div class="mono" style="text-align:center;font-size:10px;color:#f05a4e">ACCUSA CORRETTA</div>
+  <h2 style="font-size:34px;margin-top:4px">Beccato!</h2>
+  <div class="card" style="margin-top:14px;text-align:center;position:relative">
+    <div class="mono" style="font-size:9px;color:#8a6a45">L'IMPOSTORE ERA</div>
+    <svg width="74" height="76" viewBox="0 0 200 205" style="display:block;margin:8px auto 4px"><use href="#mqD" fill="#5ec8c2"/><use href="#mqQ" fill="#2b2620"/></svg>
+    <div style="font-size:22px;font-weight:800">Marco</div>
+    <div style="position:absolute;top:22px;right:16px;font-family:'Special Elite','Courier New',monospace;font-size:11px;font-weight:700;color:#8d2420;border:2px solid #8d2420;border-radius:4px;padding:2px 6px;transform:rotate(-9deg)">COLPEVOLE</div>
+  </div>
+  <div style="display:grid;gap:7px;margin-top:10px">
+    <div class="row"><svg viewBox="0 0 200 205"><use href="#mqD" fill="#5ec8c2"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Marco</div><div class="mono" style="font-size:12px;color:#f2c51c">3 VOTI</div></div>
+    <div class="row"><svg viewBox="0 0 200 205"><use href="#mqD" fill="#ff7a59"/><use href="#mqQ" fill="#22110f"/></svg><div class="name">Giulia</div><div class="mono" style="font-size:12px;color:rgba(255,246,230,.6)">1 VOTO</div></div>
+  </div>
+  <div class="cta">Continua</div>
+  <div class="ghost">Nuova partita</div>
+</div>
+
+</body>
+</html>

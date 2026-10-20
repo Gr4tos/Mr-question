@@ -35,6 +35,8 @@ async function castVote(p, targetName) {
   // l'ultimo a votare passa subito al verdetto: va bene anche se "in attesa" non fa in tempo a comparire
   await p.waitFor(() => !document.getElementById('onVoteWait').classList.contains('hidden') || !document.getElementById('onVoteScreen').classList.contains('active'), null, 8000, 'la conferma del voto');
 }
+// il colore della sagoma (fill calcolato) deve essere quello del token del posto (--av-N, N = numero del posto)
+const fillIs = (p, sel, seat) => p.page.evaluate((sel, n) => { const e = document.querySelector(sel); const probe = document.createElement('i'); probe.style.color = getComputedStyle(document.documentElement).getPropertyValue('--av-' + n); document.body.append(probe); const want = getComputedStyle(probe).color; probe.remove(); return getComputedStyle(e).fill === want; }, sel, SEATS.indexOf(seat) + 1);
 const stamp = p => p.text('#caseStamp');
 const noErrors = (h, label, allowDenied = () => false) => {
   const errs = h.players.flatMap(p => p.errors.map(e => `${p.label}: ${e}`));
@@ -57,7 +59,7 @@ async function s1(h) {
   check('chi non e\' host non vede "Apri le indagini" e legge "In attesa dell\'host" con lo stesso conteggio', !(await b.visible('#onStart')) && (await b.text('#lobbyHint')) === 'In attesa dell’host. Serve almeno un altro sospettato.', await b.text('#lobbyHint'));
   await c.join(code, 'Carlo'); await inLobby(a, 3); await inLobby(c, 3);
   await a.waitFor(() => !document.getElementById('onStart').classList.contains('hidden'), null, 8000, 'il pulsante con 3 collegati');
-  check('con 3 giocatori il pulsante compare (solo all\'host) e il testo cambia', await a.visible('#onStart') && !(await b.visible('#onStart')) && (await a.text('#lobbyHint')) === 'Quando siete tutti, aprite le indagini.' && (await b.text('#lobbyHint')) === 'In attesa che l’host apra le indagini…', [await a.text('#lobbyHint'), await b.text('#lobbyHint')]);
+  check('con 3 giocatori il pulsante compare (solo all\'host) e il testo cambia', await a.visible('#onStart') && !(await b.visible('#onStart')) && (await a.text('#lobbyHint')) === '' && (await b.text('#lobbyHint')) === 'In attesa che l’host apra le indagini…', [await a.text('#lobbyHint'), await b.text('#lobbyHint')]);
   const rows = await a.texts('#lobbyPlayers .player-row');
   check('sala: nomi, HOST e TU', rows[0].includes('Anna') && rows[0].includes('HOST') && rows[0].includes('TU') && rows[1].includes('Bea') && rows[2].includes('Carlo'), rows);
   check('il codice e\' lo stesso su tutti i telefoni', (await b.text('#lobbyCode')) === code && (await c.text('#lobbyCode')) === code);
@@ -66,13 +68,14 @@ async function s1(h) {
   await a.click('#onStart');
   await allOn([a, b, c], 'onTurnScreen'); for (const p of [a, b, c]) await ready(p);
   const impSeat = g.impostor(), impName = g.nameOf(impSeat), imp = by[impName];
+  for (const n of Object.keys(by)) check(`${n}: la sagoma del suo turno ha il colore del suo posto`, await fillIs(by[n], '#onAvatar', g.seatOf(n)));
   const common = g.val('reveal/common');
   const qs = {}; for (const n of Object.keys(by)) qs[n] = await by[n].text('#onQuestion');
   check('chi non e\' impostore riceve la domanda comune', Object.keys(by).filter(n => n !== impName).every(n => qs[n] === common), qs);
   check('l\'impostore riceve una domanda diversa', qs[impName] !== common && qs[impName].length > 0);
   for (const p of [a, b, c]) check(`${p.label}: nessun testo rivela l'impostore`, !/impostor/i.test(await screenText(p, 'onTurnScreen')));
   check('l\'impostore non vede la domanda comune', !(await imp.body()).includes(common));
-  check('timbro e progresso a inizio round', (await a.text('#onProgressText')) === '0 / 3' && (await stamp(a)) === 'CASO APERTO');
+  check('in alto "ROUND 1" al posto del timbro, senza barra di avanzamento', (await a.text('#topLabel')) === 'ROUND 1' && await a.visible('#topLabel') && !(await a.visible('#caseStamp')) && (await stamp(a)) === 'CASO APERTO' && !(await a.exists('#onProgressText')));
   check('il round e\' il numero 1 e l\'indice e\' aggiornato', g.val('meta/round') === 1 && typeof h.backend.valueAt(`index/${code}`) === 'number');
 
   // risposte: nessuno vede quelle altrui prima che abbiano risposto tutti
@@ -81,8 +84,9 @@ async function s1(h) {
   check('Anna: vede la propria risposta a verbale', (await a.text('#onMyAnswer')) === '111');
   await b.answer(222); await a.settle();
   const wl = await a.texts('#onWaitList .wait-row');
-  check('si vede solo chi ha gia\' risposto (Anna ✓, Bea ✓, Carlo …)', wl.length === 3 && wl[0].includes('✓') && wl[1].includes('✓') && wl[2].includes('…'), wl);
-  check('progresso 2 / 3', (await a.text('#onProgressText')) === '2 / 3');
+  const wdone = await a.page.$$eval('#onWaitList .wait-row', els => els.map(e => e.classList.contains('done') && !!e.querySelector('.ok')));
+  check('si vede solo chi ha gia\' risposto (Anna e Bea con la spunta, Carlo "DEVE RISPONDERE")', wl.length === 3 && wdone.join() === 'true,true,false' && wl[2].includes('DEVE RISPONDERE') && !wl[0].includes('DEVE RISPONDERE'), [wl, wdone]);
+  check('riquadro "2 su 3 hanno messo a verbale" e la propria deposizione sotto il titolo', (await a.text('#onWaitSummary')) === '2 su 3 hanno messo a verbale' && (await a.text('.my-answer')).includes('111') && (await a.visible('#onWaitArea')) && !(await a.visible('#onAnswerView')));
   const bodies = { a: await a.body(), b: await b.body(), c: await c.body() };
   check('Anna non vede la risposta di Bea; Bea non vede quella di Anna; Carlo nessuna', !bodies.a.includes('222') && !bodies.b.includes('111') && !bodies.c.includes('111') && !bodies.c.includes('222'));
   check('prima del riepilogo nessuno ha la domanda comune se e\' l\'impostore', !(await imp.body()).includes(common));
@@ -102,20 +106,27 @@ async function s1(h) {
   check('non si puo\' votare se stessi: 2 opzioni senza il proprio nome', !(await a.texts('#onVoteOptions .vote-option')).some(t => t.includes('Anna')) && !(await b.texts('#onVoteOptions .vote-option')).some(t => t.includes('Bea')));
   await castVote(a, 'Bea'); await castVote(b, 'Carlo');
   await c.settle();
-  check('chi ha votato e\' pubblico, chi ha votato cosa no', (await a.texts('#onVoteWaitList .wait-row')).join('|').includes('Carlo …') || (await a.texts('#onVoteWaitList .wait-row')).some(t => t.startsWith('Carlo') && t.includes('…')));
+  check('chi ha votato e\' pubblico, chi ha votato cosa no', (await a.texts('#onVoteWaitList .wait-row')).some(t => t.includes('Carlo') && t.includes('DEVE VOTARE')));
   check('nessun risultato prima che abbiano votato tutti', (await a.screen()) === 'onVoteScreen' && !(await a.body()).includes('VOTI RICEVUTI'));
   await castVote(c, 'Anna');
   await allOn([a, b, c], 'onResultScreen');
-  for (const p of [a, b, c]) await p.waitFor(() => document.querySelectorAll('#onVotesList .wait-row').length === 3, null, 8000, 'i voti ricevuti');
+  for (const p of [a, b, c]) await p.waitFor(() => document.querySelectorAll('#onVotesList .vote-row').length === 3, null, 8000, 'i voti ricevuti');
   for (const p of [a, b, c]) {
     check(`${p.label}: pareggio, l'impostore si salva`, (await p.text('#onResultTitle')) === 'Non questa volta.' && /Pareggio/.test(await p.text('#onResultText')), await p.text('#onResultText'));
-    check(`${p.label}: impostore rivelato e un voto a testa`, (await p.text('#onImpostor')) === impName && (await p.texts('#onVotesList .wait-row')).every(t => t.endsWith('1')), await p.texts('#onVotesList .wait-row'));
+    check(`${p.label}: impostore rivelato e un voto a testa`, (await p.text('#onImpostor')) === impName && (await p.texts('#onVotesList .vote-row')).every(t => t.endsWith('1 VOTO')), await p.texts('#onVotesList .vote-row'));
   }
   check('timbro CASO CHIUSO sul verdetto', (await stamp(a)) === 'CASO CHIUSO');
+  for (const p of [a, b, c]) check(`${p.label}: la sagoma dell'impostore nel verdetto ha il colore del suo posto (${impSeat})`, await fillIs(p, '#onRevealAvatar', impSeat));
+  check('verdetto online: la "×" ce per tutti (anche per chi non è host)', await a.visible('#exitButton') && await b.visible('#exitButton') && await c.visible('#exitButton'));
+  await b.click('#exitButton'); await b.waitFor(() => !document.getElementById('exitDialog').classList.contains('hidden'), null, 3000, 'conferma');
+  check('dal verdetto la "×" apre la conferma di uscita online', (await b.text('#exitQuestion')) === 'Vuoi uscire dalla partita?' && (await b.text('#exitStay')) === 'No, resta');
+  await b.click('#exitStay'); await b.settle(200);
+  check('"No, resta": si resta sul verdetto', (await b.screen()) === 'onResultScreen');
   check('solo l\'host vede "Continua" e "Nuova partita"', await a.visible('#onContinue') && await a.visible('#onNewGame') && !(await b.visible('#onContinue')) && !(await b.visible('#onNewGame')) && /host/i.test(await b.text('#onResultHint')));
 
-  const sty = sel => a.page.$eval(sel, e => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return [e.className.replace(' hidden', ''), Math.round(r.width), Math.round(r.height), cs.backgroundImage, cs.boxShadow, cs.fontSize].join('|'); });
-  check('verdetto online: "Continua" e "Nuova partita" hanno lo stesso peso', (await sty('#onContinue')) === (await sty('#onNewGame')).replace('quiet-button', 'primary-button') || ((await sty('#onContinue')).split('|').slice(0, 1).join() === (await sty('#onNewGame')).split('|').slice(0, 1).join() && (await sty('#onContinue')) === (await sty('#onNewGame'))), [await sty('#onContinue'), await sty('#onNewGame')]);
+  const sty = sel => a.page.$eval(sel, e => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return { cls: e.className.replace(' hidden', ''), w: Math.round(r.width), h: Math.round(r.height), bg: cs.backgroundColor, shadow: cs.boxShadow }; });
+  const sc = await sty('#onContinue'), sn = await sty('#onNewGame');
+  check('verdetto online: "Continua" principale giallo, "Nuova partita" secondario, stessa larghezza', sc.cls.includes('primary-button') && sn.cls.includes('secondary-button') && !sn.cls.includes('primary-button') && sc.w === sn.w && sc.h > sn.h && sc.bg !== sn.bg && sc.shadow !== 'none', [sc, sn]);
 
   // "Continua": nuovo round, stessi giocatori, impostore diverso
   await a.click('#onContinue');
@@ -128,8 +139,8 @@ async function s1(h) {
   await allOn([a, b, c], 'onSummaryScreen'); await a.click('#onToVote');
   for (const n of Object.keys(by)) await castVote(by[n], n === imp2Name ? Object.keys(by).find(x => x !== n) : imp2Name);
   await allOn([a, b, c], 'onResultScreen');
-  for (const p of [a, b, c]) await p.waitFor(() => document.querySelectorAll('#onVotesList .wait-row').length === 3, null, 8000, 'i voti ricevuti');
-  for (const p of [a, b, c]) check(`${p.label}: round 2 "Beccato." con 2 voti all'impostore`, (await p.text('#onResultTitle')) === 'Beccato.' && (await p.text('#onImpostor')) === imp2Name && (await p.texts('#onVotesList .wait-row'))[0].includes(imp2Name) && (await p.texts('#onVotesList .wait-row'))[0].endsWith('2'));
+  for (const p of [a, b, c]) await p.waitFor(() => document.querySelectorAll('#onVotesList .vote-row').length >= 1, null, 8000, 'i voti ricevuti');
+  for (const p of [a, b, c]) check(`${p.label}: round 2 "Beccato!" con 2 voti all'impostore`, (await p.text('#onResultTitle')) === 'Beccato!' && (await p.text('#onImpostor')) === imp2Name && (await p.texts('#onVotesList .vote-row'))[0].includes(imp2Name) && (await p.texts('#onVotesList .vote-row'))[0].endsWith('2 VOTI') && (await p.texts('#onVotesList .vote-row')).every(t => !t.startsWith('0')));
 
   // "Nuova partita"
   await a.click('#onNewGame');
@@ -160,7 +171,7 @@ async function s2(h) {
   const rest = [];
   for (const n of ['Bea', 'Carlo', 'Dino', 'Eva', 'Fabio']) { const p = await h.newPlayer(n); await p.join(code, n); rest.push(p); }
   await inLobby(a, 7);
-  check('sala piena: 7 / 7', (await a.text('#lobbyCount')) === '7 / 7');
+  check('sala piena: 7 tessere, nessuna "In arrivo"', (await a.page.$$eval('#lobbyPlayers .tile', e => e.length)) === 7 && (await a.page.$$eval('#lobbyPlayers .tile.empty', e => e.length)) === 0);
   const late = await h.newPlayer('Hugo'); await late.goOnline(); await late.type('#onName', 'Hugo'); await late.type('#onCode', code); await late.tryJoin();
   check('ottavo giocatore: partita piena', /piena/.test(await late.text('#onMenuError')), await late.text('#onMenuError'));
   await a.click('#onStart'); await a.waitScreen('onTurnScreen');
@@ -242,7 +253,7 @@ async function s4(h) {
   check('Anna, tornata in rete, non e\' piu\' host e vede la votazione in corso', !(await a.visible('#onToVote')) && (await a.screen()) === 'onVoteScreen' && g.val('players/p1/connected') === true, await a.screen());
   await castVote(a, impName === 'Anna' ? 'Bea' : impName);
   await allOn([a, b, c, d], 'onResultScreen');
-  for (const p of [a, b, c, d]) await p.waitFor(() => document.querySelectorAll('#onVotesList .wait-row').length === 4, null, 8000, 'voti');
+  for (const p of [a, b, c, d]) await p.waitFor(() => document.querySelectorAll('#onVotesList .vote-row').length >= 1, null, 8000, 'voti');
   check('il nuovo host ha chiuso il round: verdetto con l\'impostore giusto su tutti', (await a.text('#onImpostor')) === impName && (await c.text('#onImpostor')) === impName && await b.visible('#onContinue') && !(await a.visible('#onContinue')));
 
   // uscita volontaria dell'host in sala
@@ -286,8 +297,8 @@ async function s5(h) {
   await a.click('#onToVote'); await allOn([a, b, d], 'onVoteScreen');
   await castVote(a, 'Dino'); await castVote(b, 'Dino'); await castVote(d, 'Anna');
   await allOn([a, b, d], 'onResultScreen');
-  for (const p of [a, b, d]) await p.waitFor(() => document.querySelectorAll('#onVotesList .wait-row').length === 3, null, 8000, 'voti');
-  check('verdetto senza Carlo: Dino beccato con 2 voti', (await a.text('#onResultTitle')) === 'Beccato.' && (await b.texts('#onVotesList .wait-row'))[0].includes('Dino') && !(await b.texts('#onVotesList .wait-row')).some(t => t.includes('Carlo')));
+  for (const p of [a, b, d]) await p.waitFor(() => document.querySelectorAll('#onVotesList .vote-row').length >= 1, null, 8000, 'voti');
+  check('verdetto senza Carlo: Dino beccato con 2 voti', (await a.text('#onResultTitle')) === 'Beccato!' && (await b.texts('#onVotesList .vote-row'))[0].includes('Dino') && !(await b.texts('#onVotesList .vote-row')).some(t => t.includes('Carlo')));
 
   // 2) "Continua" con Carlo ancora assente: nuovo round senza di lui
   await a.click('#onContinue'); await allOn([a, b, d], 'onTurnScreen'); for (const p of [a, b, d]) await ready(p);
@@ -315,7 +326,7 @@ async function s6(h) {
   await h.backend.advance(46000); await a.rerender(); await a.settle(300);
   check('"Prosegui senza gli assenti" compare', await a.visible('#onSkipAbsent'));
   await a.click('#onSkipAbsent');
-  await a.waitFor(() => document.getElementById('onTurnScreen').classList.contains('active') && document.getElementById('onProgressText').textContent === '0 / 3', null, 8000, 'il nuovo round');
+  await a.waitFor(() => document.getElementById('onTurnScreen').classList.contains('active') && !document.getElementById('onAnswerView').classList.contains('hidden') && document.getElementById('onWaitArea').classList.contains('hidden'), null, 8000, 'il nuovo round');
   await allOn([a, b, c], 'onTurnScreen'); for (const p of [a, b, c]) await ready(p);
   check('round annullato: nuovo round (2) con 3 giocatori senza Dino', g.val('meta/round') === 2 && JSON.stringify(Object.keys(g.val('seats'))) === JSON.stringify(['p1', 'p2', 'p3']));
   const notice = 'Un sospettato si è dileguato: si riapre il caso.';
@@ -355,7 +366,7 @@ async function s7(h) {
   for (let i = 1; i < 7; i++) await ps[i].join(code, names[i]);
   await inLobby(ps[0], 7);
   const evil = ps[0].page;
-  check('un nome con HTML resta testo (nessun elemento iniettato)', (await evil.$$eval('#lobbyPlayers b', e => e.length)) === 0 && (await ps[0].texts('#lobbyPlayers .player-name')).includes(names[6]), await ps[0].texts('#lobbyPlayers .player-name'));
+  check('un nome con HTML resta testo (nessun elemento iniettato)', (await evil.$$eval('#lobbyPlayers b', e => e.length)) === 0 && (await ps[0].texts('#lobbyPlayers .tile-text')).includes(names[6]), await ps[0].texts('#lobbyPlayers .tile-text'));
   const geo = async p => p.page.evaluate(() => ({ hOver: document.documentElement.scrollWidth > document.documentElement.clientWidth, w: innerWidth }));
   check('sala da 7 a 375 px: nessuno scroll orizzontale', !(await geo(ps[0])).hOver);
   await shot(ps[0], 'lobby-7-375x667');
@@ -373,8 +384,9 @@ async function s7(h) {
   const impName = g.nameOf(g.impostor());
   for (let i = 0; i < 7; i++) await castVote(ps[i], names[i] === impName ? (i === 0 ? names[1] : names[0]) : impName);
   await allOn(ps, 'onResultScreen');
-  for (const p of ps) await p.waitFor(() => document.querySelectorAll('#onVotesList .wait-row').length === 7, null, 8000, '7 voti');
-  check('7 giocatori: verdetto concorde su tutti i telefoni', (await Promise.all(ps.map(p => p.text('#onResultTitle')))).every(t => t === 'Beccato.') && (await Promise.all(ps.map(p => p.text('#onImpostor')))).every(t => t === impName));
+  for (const p of ps) await p.waitFor(() => document.querySelectorAll('#onVotesList .vote-row').length >= 1, null, 8000, '7 voti');
+  check('7 giocatori: verdetto concorde su tutti i telefoni', (await Promise.all(ps.map(p => p.text('#onResultTitle')))).every(t => t === 'Beccato!') && (await Promise.all(ps.map(p => p.text('#onImpostor')))).every(t => t === impName));
+  for (const p of [ps[0], ps[3], ps[6]]) check(`7 giocatori, ${p.label}: la sagoma dell'impostore nel verdetto ha il colore del suo posto (${g.impostor()})`, await fillIs(p, '#onRevealAvatar', g.impostor()));
   await shot(ps[1], 'result-375x667');
   noErrors(h, 'S7');
 }
@@ -393,7 +405,7 @@ async function s8(h) {
   check('offline: "Un solo telefono" funziona', (await a.screen()) === 'homeScreen');
   await a.click('#startGame'); await a.waitScreen('turnScreen');
   await a.click('#showQuestion'); await a.type('#answerInput', '4'); await a.click('#confirmAnswer');
-  check('offline: la partita locale va avanti', (await a.screen()) === 'turnScreen' && (await a.text('#turnStep')) === '2 / 3');
+  check('offline: la partita locale va avanti', (await a.screen()) === 'turnScreen' && (await a.text('#topLabel')) === 'TURNO 2 / 3');
   await a.exit(false);
   check('uscita locale: stessi testi di prima', true);
   await a.click('#exitButton'); await a.waitFor(() => !document.getElementById('exitDialog').classList.contains('hidden'), null, 3000, 'conferma');

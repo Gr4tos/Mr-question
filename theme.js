@@ -1,11 +1,11 @@
 // Tema chiaro / scuro. Si carica in <head>, subito dopo il foglio di stile e senza defer:
 // cosi' il tema giusto e' applicato prima del primo disegno (nessun lampo di colore).
-// Scelte: 'auto' (segue prefers-color-scheme, predefinito), 'light', 'dark'. Salvata in localStorage (mq_theme).
+// Scelte: 'dark' (predefinito), 'auto' (segue prefers-color-scheme), 'light'. Salvata in localStorage (mq_theme).
 (function () {
   var KEY = 'mq_theme', root = document.documentElement;
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
   function read() {
-    try { var v = localStorage.getItem(KEY); return v === 'light' || v === 'dark' ? v : 'auto'; } catch (e) { return 'auto'; }
+    try { var v = localStorage.getItem(KEY); return v === 'light' || v === 'auto' ? v : 'dark'; } catch (e) { return 'dark'; }
   }
   function resolve(pref) { return pref === 'auto' ? (mq && mq.matches ? 'light' : 'dark') : pref; }
   function apply(pref) {

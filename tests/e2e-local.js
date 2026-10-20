@@ -10,6 +10,8 @@ async function playRound(p, n, answers) {
     await p.click('#confirmAnswer'); await p.settle(60);
   }
 }
+// il colore della sagoma (fill calcolato) deve essere quello del token del posto n (--av-n)
+const fillIs = (p, sel, n) => p.page.evaluate((sel, n) => { const e = document.querySelector(sel); const probe = document.createElement('i'); probe.style.color = getComputedStyle(document.documentElement).getPropertyValue('--av-' + n); document.body.append(probe); const want = getComputedStyle(probe).color; probe.remove(); return getComputedStyle(e).fill === want; }, sel, n);
 async function vote(p, wrong) {
   await p.click('#goVote'); await p.settle(80);
   const imp = await p.page.evaluate(() => state.round.impostor);
@@ -32,11 +34,13 @@ async function vote(p, wrong) {
 
     // 3 giocatori senza nomi: verdetto corretto, rivincita, verdetto sbagliato
     await p.click('#startGame'); await p.waitScreen('turnScreen');
-    check('turno 1 / 3 con il nome di riserva', (await p.text('#turnStep')) === '1 / 3' && (await p.text('#currentPlayerName')) === 'Sospettato 1');
+    check('turno 1 / 3 con il nome di riserva', (await p.text('#topLabel')) === 'TURNO 1 / 3' && (await p.visible('#topLabel')) && !(await p.visible('#caseStamp')) && (await p.text('#currentPlayerName')) === 'Sospettato 1');
     await playRound(p, 3);
     check('riepilogo con le tre risposte', (await p.screen()) === 'voteScreen' && (await p.texts('.answer-row')).join('|') === 'Sospettato 11|Sospettato 22|Sospettato 33');
     const r1 = await vote(p, false);
-    check('verdetto corretto, timbro CASO CHIUSO', r1.title === 'Beccato.' && (await p.text('#caseStamp')) === 'CASO CHIUSO', r1);
+    check(`verdetto: la sagoma dell'impostore (posto ${r1.imp + 1}) ha il colore del suo posto`, await fillIs(p, '#revealAvatar', r1.imp + 1));
+    check('verdetto corretto, timbro CASO CHIUSO', r1.title === 'Beccato!' && (await p.text('#caseStamp')) === 'CASO CHIUSO', r1);
+    check('verdetto a un telefono: nessuna "×"', !(await p.visible('#exitButton')));
     await p.click('#rematch'); await p.waitScreen('turnScreen');
     check('"Continua": stessi nomi e timbro di nuovo APERTO', (await p.text('#currentPlayerName')) === 'Sospettato 1' && (await p.text('#caseStamp')) === 'CASO APERTO');
     await playRound(p, 3);
@@ -58,17 +62,18 @@ async function vote(p, wrong) {
     const names = ['Dani', 'Tommy', 'Luca', 'Giulia', 'Marco', 'Sara', 'Alex'];
     for (let i = 0; i < 7; i++) await p.page.evaluate((k, v) => { const e = document.querySelectorAll('#nameFields input')[k]; e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }, i, names[i]);
     await p.click('#startGame'); await p.waitScreen('turnScreen');
-    check('7 giocatori: turno 1 / 7', (await p.text('#turnStep')) === '1 / 7');
+    check('7 giocatori: turno 1 / 7', (await p.text('#topLabel')) === 'TURNO 1 / 7');
     await playRound(p, 7);
     check('7 risposte nel riepilogo', (await p.page.$$('.answer-row')).length === 7);
     const r7 = await vote(p, true);
+    check(`7 giocatori: la sagoma dell'impostore (posto ${r7.imp + 1}) ha il colore del suo posto`, await fillIs(p, '#revealAvatar', r7.imp + 1));
     check('7 giocatori: verdetto sbagliato con l\'impostore giusto', r7.title === 'Non questa volta.' && r7.reveal === names[r7.imp], r7);
 
-    // verdetto: due pulsanti di pari peso, "Continua" e "Nuova partita"
-    const btn = sel => p.page.$eval(sel, e => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return { cls: e.className, text: e.textContent.trim(), w: Math.round(r.width), h: Math.round(r.height), bg: cs.backgroundImage, shadow: cs.boxShadow, font: cs.fontSize, color: cs.color, vis: r.height > 0 }; });
+    // verdetto: "Continua" è il pulsante principale (giallo), "Nuova partita" il secondario; stessa dimensione
+    const btn = sel => p.page.$eval(sel, e => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return { cls: e.className, text: e.textContent.trim(), w: Math.round(r.width), h: Math.round(r.height), bg: cs.backgroundColor, shadow: cs.boxShadow, font: cs.fontSize, color: cs.color, vis: r.height > 0 }; });
     const bc = await btn('#rematch'), bn = await btn('#newGame');
     check('verdetto: pulsanti "Continua" e "Nuova partita"', bc.text.startsWith('Continua') && bn.text.startsWith('Nuova partita'), [bc.text, bn.text]);
-    check('verdetto: entrambi pulsanti principali, stessa forma, dimensione e stile', bc.cls === bn.cls && bc.cls.includes('primary-button') && bc.w === bn.w && bc.h === bn.h && bc.bg === bn.bg && bc.shadow === bn.shadow && bc.font === bn.font && bc.color === bn.color && bc.vis && bn.vis, { c: bc, n: bn });
+    check('verdetto: "Continua" principale giallo, "Nuova partita" secondario, stessa larghezza', bc.cls.includes('primary-button') && bn.cls.includes('secondary-button') && !bn.cls.includes('primary-button') && bc.w === bn.w && bc.h > bn.h && bc.bg !== bn.bg && bc.shadow !== 'none' && bc.vis && bn.vis, { c: bc, n: bn });
     check('verdetto: i vecchi testi "Riapri il caso" e "Nuovo fascicolo" non ci sono piu\'', !(await p.body()).includes('Riapri il caso') && !(await p.body()).includes('Nuovo fascicolo'));
     await p.click('#newGame'); await p.waitScreen('homeScreen');
     check('"Nuova partita": torna all\'impostazione con numero e nomi memorizzati', (await p.text('#playerCount')) === '7' && (await p.page.$$eval('#nameFields input', e => e.map(i => i.value))).join() === names.join());
@@ -77,7 +82,7 @@ async function vote(p, wrong) {
     await p.click('#startGame'); await p.waitScreen('turnScreen');
     await playRound(p, 7); await vote(p, false);
     await p.click('#rematch'); await p.waitScreen('turnScreen');
-    check('"Continua": nuovo round con gli stessi 7 nomi', (await p.text('#turnStep')) === '1 / 7' && (await p.page.evaluate(() => state.names.join())) === names.join() && (await p.text('#currentPlayerName')) === 'Dani');
+    check('"Continua": nuovo round con gli stessi 7 nomi', (await p.text('#topLabel')) === 'TURNO 1 / 7' && (await p.page.evaluate(() => state.names.join())) === names.join() && (await p.text('#currentPlayerName')) === 'Dani');
     await p.exit(true); await p.click('#goLocal'); await p.waitScreen('homeScreen');
 
     // uscita a meta' partita

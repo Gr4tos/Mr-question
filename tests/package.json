@@ -9,9 +9,10 @@
     "test:local": "node e2e-local.js",
     "test:online": "node e2e-online.js",
     "test:sdk": "node sdk-link-check.js",
-    "test": "node build-rules.js && node check-static.js && node contrast-check.js && node --test rules.test.js && node sdk-link-check.js && node sw-offline-check.js && node e2e-local.js && node e2e-online.js",
+    "test": "node build-rules.js && node check-static.js && node contrast-check.js && node --test rules.test.js && node sdk-link-check.js && node sw-offline-check.js && node e2e-local.js && node e2e-layout.js && node e2e-online.js",
     "test:contrast": "node contrast-check.js",
-    "test:sw": "node sw-offline-check.js"
+    "test:sw": "node sw-offline-check.js",
+    "test:layout": "node e2e-layout.js"
   },
   "devDependencies": {
     "puppeteer-core": "^24.0.0",

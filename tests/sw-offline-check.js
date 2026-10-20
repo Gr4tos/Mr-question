@@ -16,7 +16,7 @@ const check = (label, ok, extra) => { if (!ok) bad++; console.log(`${ok ? 'OK  '
       const c = await caches.open(names[0]);
       return { names, urls: (await c.keys()).map(r => new URL(r.url).pathname) };
     });
-    check('cache attiva v14', info.names.length === 1 && info.names[0] === 'mr-question-shell-v14', info.names);
+    check('cache attiva v19', info.names.length === 1 && info.names[0] === 'mr-question-shell-v19', info.names);
     check('online.js e i font sono in cache', ['/online.js', '/app.js', '/assets/fonts/inter-latin.woff2', '/assets/fonts/special-elite-latin.woff2'].every(u => info.urls.includes(u)));
     check('l\'SDK Firebase non e\' stato scaricato all\'installazione', !info.urls.some(u => u.includes('vendor/firebase')));
     await p.page.setOfflineMode(true);
@@ -26,7 +26,7 @@ const check = (label, ok, extra) => { if (!ok) bad++; console.log(`${ok ? 'OK  '
     check('offline: "Party online" mostra il messaggio e propone un solo telefono', /offline/i.test(await p.text('#menuError')) && await p.visible('#goLocal'));
     await p.click('#goLocal'); await p.waitScreen('homeScreen');
     await p.click('#startGame'); await p.waitScreen('turnScreen');
-    check('offline: la partita a un telefono parte', (await p.text('#turnStep')) === '1 / 3');
+    check('offline: la partita a un telefono parte', (await p.text('#topLabel')) === 'TURNO 1 / 3');
     const fonts = await p.page.evaluate(async () => { await document.fonts.ready; return [...document.fonts].map(f => `${f.family}:${f.status}`); });
     check('offline: font dalla cache', fonts.length > 0 && fonts.every(f => f.endsWith(':loaded')), fonts);
     check('nessun errore', p.errors.length === 0, p.errors);

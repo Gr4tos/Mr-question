@@ -1,0 +1,57 @@
+/* PROPOSTA tema chiaro "party dossier" — non applicata all'app */
+:root[data-theme="light"]{
+  color-scheme: light;
+  --ink:        #dcc59a;
+  --bg-g1:      #f3e6c8;
+  --bg-g2:      #e9d7b0;
+  --on-bg:      #2b1a14;
+  --on-bg-2:    #55392b;
+  --on-bg-3:    #5f4636;
+  --bg-line:    #b79f72;
+  --bg-line-2:  #5f4636;
+  --bg-track:   #cdb68a;
+  --tile:       rgba(255,255,255,.55);
+  --tile-line:  rgba(43,26,20,.18);
+  --tile-2:     rgba(43,26,20,.08);
+  --tile-2-line:rgba(43,26,20,.3);
+  --round-bg:   rgba(43,26,20,.1);
+  --sel-bg:     rgba(141,36,32,.14);
+  --paper:      #fbf6e8;
+  --paper-2:    #fffdf6;
+  --paper-3:    #ffffff;
+  --paper-edge: #cdbb92;
+  --paper-line: #b7a98a;
+  --paper-ink:  #2b2620;
+  --paper-ink2: #5a4d35;
+  --paper-ink3: #6b5d3f;
+  --paper-press:#f0e6cc;
+  --avatar-bg:  #f3ead3;
+  --placeholder:#7a6c4d;
+  --stamp:      #8d2420;
+  --stamp-top:  #8d2420;
+  --stamp-ink:  #8d2420;
+  --stamp-bg:   #f6e6e1;
+  --stamp-tint: rgba(141,36,32,.08);
+  --hi-top:     #5e4708;
+  --btn-bg:     #f2c51c;
+  --btn-ink:    #22110f;
+  --btn-sub:    #5b4310;
+  --btn-edge:   #8a640a;
+  --btn-ic:     rgba(34,17,15,.12);
+  --emblem-mark:#22110f;
+  --emblem-outline:#2b1a14;
+  --emblem-outline-w:3.2;
+  --emblem-shadow:#2b1a14;
+  --emblem-shadow-op:.18;
+  --dot-off:    #9a8c6a;
+  --green:      #3f6b3a;
+  --shadow-card:0 10px 22px rgba(70,40,15,.2);
+  --shadow-rim: inset 0 1px 0 rgba(255,255,255,.6);
+  --shadow-pop: 0 14px 30px rgba(70,40,15,.3);
+}
+/* seconda riga dei titoli: evidenziatore giallo dietro al testo scuro (il giallo come testo non si legge sul chiaro) */
+:root[data-theme="light"] .screen-title span{
+  color:#22110f; background:#f2c51c; padding:0 .2em; border-radius:8px;
+  -webkit-box-decoration-break:clone; box-decoration-break:clone;
+}
+:root[data-theme="light"] .progress-track div{ background:#8d2420; }

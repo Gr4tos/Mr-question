@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#15120d">
+  <meta name="theme-color" content="#150d0b">
   <meta name="description" content="Mr Question? Il party game dell'impostore.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -23,18 +23,19 @@
         <path d="M20 70 C11 66 13 59 24 60 C40 57 64 55 100 55 C136 55 160 57 176 60 C187 59 189 66 180 70 C160 77 136 80 100 80 C64 80 40 77 20 70 Z"/>
         <path d="M62 76 L138 76 L138 120 L162 107 L152 150 C178 154 196 164 198 182 L198 200 L2 200 L2 182 C4 164 22 154 48 150 L38 107 L62 120 Z"/>
       </g>
+      <g id="mqMark">
+        <path d="M73 94 C73 72 87 62 102 62 C120 62 131 74 131 90 C131 105 121 112 114 118 C110 122 110 126 110 133 L90 133 C90 121 93 114 101 107 C107 101 111 97 111 90 C111 83 107 79 101 79 C95 79 92 85 92 94 Z"/>
+        <rect x="89" y="143" width="21" height="21" rx="3"/>
+      </g>
     </defs>
   </svg>
   <main class="app-shell">
     <header class="topbar">
-      <div class="brand-lockup">
-        <img id="brandLogo" class="brand-logo logo-missing" src="assets/images/mr-question-logo.png" alt="Mr Question?" onerror="this.classList.add('logo-missing')">
-        <div class="brand-fallback"><span class="case-no">CASO N° <b id="caseNumber">0037</b></span></div>
-      </div>
-      <div class="topbar-right">
-        <span id="caseStamp" class="stamp stamp-open" aria-hidden="true">CASO APERTO</span>
-        <button id="exitButton" class="exit-button hidden" type="button" aria-label="Torna al menù principale"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg></button>
-      </div>
+      <button id="exitButton" class="round-button hidden" type="button" aria-label="Torna al menù principale"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <span id="caseStamp" class="stamp stamp-open" aria-hidden="true">CASO APERTO</span>
+      <span id="topLabel" class="top-label hidden"></span>
+      <button id="helpButton" class="round-button" type="button" aria-label="Come si gioca"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9.2 9.2a2.9 2.9 0 1 1 4.3 2.5c-1 .6-1.5 1.1-1.5 2.1"/><path d="M12 17.6h.01"/></svg></button>
+      <img id="brandLogo" class="brand-logo logo-missing" src="assets/images/mr-question-logo.png" alt="Mr Question?" onerror="this.classList.add('logo-missing')">
     </header>
     <div id="netBanner" class="net-banner hidden" role="status">Connessione persa. Riconnessione in corso…</div>
     <p id="fewBanner" class="notice few-banner hidden" role="status"><span id="fewText">Sono rimasti meno di 3 sospettati collegati. Se nessuno rientra entro 45 secondi, si torna in sala d’attesa.</span> <strong id="fewCount" class="few-count"></strong></p>
@@ -57,80 +58,74 @@
         </div>
       </div>
       <h1 class="brand-title">MR QUESTION<span class="brand-mark">?</span></h1>
-      <div class="setup-card">
-        <span class="paperclip" aria-hidden="true"></span>
-        <div class="setup-heading"><span>SCEGLI MODALITÀ</span></div>
-        <button id="goLocal" class="primary-button" type="button"><span>Un solo telefono</span></button>
-        <button id="goOnline" class="primary-button" type="button"><span>Party online</span></button>
-        <p id="menuError" class="inline-error hidden" role="alert"></p>
-      </div>
+      <p class="menu-label">SCEGLI MODALITÀ</p>
+      <button id="goOnline" class="mode-card mode-hot" type="button">
+        <span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5"/><path d="M15 14.5c2.6 0 5 1.6 5 4.5"/></svg></span>
+        <span class="mode-text"><span class="mode-name">Party online</span><span class="mode-sub">Ognuno col suo telefono</span></span>
+      </button>
+      <button id="goLocal" class="mode-card" type="button">
+        <span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
+        <span class="mode-text"><span class="mode-name">Un solo telefono</span><span class="mode-sub">Ve lo passate di mano</span></span>
+      </button>
+      <p id="menuError" class="inline-error hidden" role="alert"></p>
       <div id="themePicker" class="theme-picker" role="radiogroup" aria-label="Tema">
         <button id="themeLight" class="theme-option" type="button" role="radio" aria-checked="false" aria-label="Tema chiaro" data-theme-choice="light">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>
         </button>
-        <button id="themeAuto" class="theme-option" type="button" role="radio" aria-checked="true" aria-label="Tema automatico" data-theme-choice="auto">
+        <button id="themeAuto" class="theme-option" type="button" role="radio" aria-checked="false" aria-label="Tema automatico" data-theme-choice="auto">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8"/><path class="fill" d="M12 4a8 8 0 0 1 0 16z"/></svg>
         </button>
-        <button id="themeDark" class="theme-option" type="button" role="radio" aria-checked="false" aria-label="Tema scuro" data-theme-choice="dark">
+        <button id="themeDark" class="theme-option" type="button" role="radio" aria-checked="true" aria-label="Tema scuro" data-theme-choice="dark">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
         </button>
       </div>
     </section>
 
     <section id="homeScreen" class="screen">
-      <div class="hero-art" aria-hidden="true">
-        <div class="detective-emblem">
-          <svg class="detective-mark" viewBox="-6 -4 214 236" focusable="false">
-            <ellipse class="emblem-shadow" cx="104" cy="214" rx="104" ry="9"/>
-            <use class="emblem-side" href="#mqSilhouette" transform="translate(4.2,7)"/>
-            <use class="emblem-side" href="#mqSilhouette" transform="translate(3,5)"/>
-            <use class="emblem-side" href="#mqSilhouette" transform="translate(1.8,3)"/>
-            <use class="emblem-side" href="#mqSilhouette" transform="translate(0.6,1)"/>
-            <use class="emblem-face" href="#mqSilhouette"/>
-            <g class="emblem-mark">
-              <path d="M73 94 C73 72 87 62 102 62 C120 62 131 74 131 90 C131 105 121 112 114 118 C110 122 110 126 110 133 L90 133 C90 121 93 114 101 107 C107 101 111 97 111 90 C111 83 107 79 101 79 C95 79 92 85 92 94 Z"/>
-              <rect x="89" y="143" width="21" height="21" rx="3"/>
-            </g>
-          </svg>
-        </div>
-      </div>
-      <h1 class="brand-title">MR QUESTION<span class="brand-mark">?</span></h1>
+      <h1 class="screen-title">Chi sono<br><span>i sospettati?</span></h1>
       <div class="setup-card">
-        <span class="paperclip" aria-hidden="true"></span>
         <div class="setup-heading"><span>SOSPETTATI SCHEDATI</span><span id="playerCountLabel">3 giocatori</span></div>
         <div class="player-stepper"><button id="minusPlayers" class="step-button" aria-label="Meno giocatori">−</button><strong id="playerCount">3</strong><button id="plusPlayers" class="step-button" aria-label="Più giocatori">+</button></div>
         <div id="nameFields" class="name-fields"></div>
         <p id="homeError" class="inline-error hidden" role="alert"></p>
-        <button id="startGame" class="primary-button"><span id="startLabel">APRI LE INDAGINI</span><span class="button-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M19 5v6a4 4 0 0 1-4 4H5"/><path d="M9 11l-4 4 4 4"/></svg></span></button>
       </div>
-      <button id="backToMenu" class="quiet-button" type="button">Indietro</button>
+      <div class="actions">
+        <button id="startGame" class="primary-button"><span id="startLabel">Apri le indagini</span><span class="button-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M19 5v6a4 4 0 0 1-4 4H5"/><path d="M9 11l-4 4 4 4"/></svg></span></button>
+        <button id="backToMenu" class="quiet-button" type="button">Indietro</button>
+      </div>
     </section>
 
     <section id="turnScreen" class="screen">
-      <div class="round-progress"><div class="progress-copy"><span>TURNO <b id="turnStep">1 / 3</b></span><span>PASSA IL FASCICOLO</span></div><div class="progress-track"><div id="progressFill"></div></div></div>
-      <div class="private-stage"><div class="private-seal"><span>❋</span></div><div class="eyebrow">SOLO PER TE</div><h2>Il turno di<br><span id="currentPlayerName">Sospettato 1</span></h2><p class="turn-helper">Assicurati che nessun altro guardi.</p><button id="showQuestion" class="primary-button"><span>Apri la scheda</span><span class="button-icon">↗</span></button>
-        <div id="questionArea" class="question-area hidden"><div class="question-label">LA TUA DOMANDA</div><p id="questionText" class="question-text"></p><label class="answer-label" for="answerInput">LA TUA RISPOSTA</label><input id="answerInput" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off"><p id="answerError" class="inline-error hidden" role="alert"></p><button id="confirmAnswer" class="primary-button"><span>Metti a verbale</span><span class="button-icon">✓</span></button></div>
-      </div><div class="privacy-note"><span>◉</span> La tua risposta resta segreta</div>
+      <div class="private-stage">
+        <svg id="turnAvatar" class="av stage-avatar s1" viewBox="0 0 200 205" focusable="false" aria-hidden="true"><use href="#mqSilhouette"/><use class="av-mark" href="#mqMark"/></svg>
+        <div class="eyebrow">SOLO PER TE</div>
+        <h2>Il turno di<br><span id="currentPlayerName">Sospettato 1</span></h2>
+        <p class="turn-helper">Assicurati che nessun altro guardi.</p>
+        <div id="questionArea" class="question-area hidden"><div class="question-label">LA TUA DOMANDA</div><p id="questionText" class="question-text"></p><label class="answer-label" for="answerInput">LA TUA RISPOSTA</label><input id="answerInput" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off"><p id="answerError" class="inline-error hidden" role="alert"></p></div>
+      </div>
+      <p class="privacy-note">Copri lo schermo. La domanda è solo tua.</p>
+      <div class="actions">
+        <button id="showQuestion" class="primary-button"><span>Apri la scheda</span></button>
+        <button id="confirmAnswer" class="primary-button hidden"><span>Metti a verbale</span></button>
+      </div>
     </section>
 
-    <section id="voteScreen" class="screen"><div class="eyebrow">TUTTI HANNO DEPOSTO</div><h1 class="screen-title">Confrontate<br><span>le deposizioni.</span></h1><div class="common-question"><div class="question-label">LA DOMANDA UFFICIALE</div><p id="commonQuestionText"></p></div><div id="answersList" class="answers-list"></div><button id="goVote" class="primary-button"><span>Alle votazioni</span><span class="button-icon">↗</span></button><button id="restartHome" class="quiet-button">Archivia il caso</button></section>
+    <section id="voteScreen" class="screen"><h1 class="screen-title">Confrontate le<br><span>deposizioni</span></h1><div class="common-question"><div class="question-label">LA DOMANDA UFFICIALE</div><p id="commonQuestionText"></p></div><div id="answersList" class="answers-list"></div><div class="actions"><button id="goVote" class="primary-button"><span>Alle votazioni</span></button></div></section>
 
-    <section id="ballotScreen" class="screen"><div class="eyebrow">VERDETTO POPOLARE</div><h1 class="screen-title">Chi vi<br><span>insospettisce?</span></h1><p class="screen-subtitle">Indicate chi credete sia l’impostore.</p><div id="voteOptions" class="vote-options"></div><div id="voteConfirmBox" class="vote-confirm-box hidden"><p id="voteConfirmText"></p><button id="confirmVote" class="primary-button"><span>Firma l’accusa</span><span class="button-icon">✓</span></button><button id="changeVote" class="quiet-button">Cambia scelta</button></div><button id="backToAnswers" class="quiet-button">Torna alle deposizioni</button></section>
+    <section id="ballotScreen" class="screen"><h1 class="screen-title">Chi vi<br><span>insospettisce?</span></h1><p class="screen-subtitle">Tocca il sospettato da accusare.</p><div id="voteOptions" class="tile-grid"></div><div class="actions"><button id="confirmVote" class="primary-button hidden"><span id="voteConfirmText">Firma l’accusa</span></button><button id="backToAnswers" class="quiet-button">Torna alle deposizioni</button></div></section>
 
-    <section id="resultScreen" class="screen"><div id="resultIcon" class="result-medallion">✦</div><div id="resultEyebrow" class="eyebrow result-eyebrow">VERDETTO</div><h1 id="resultTitle" class="result-title">Beccato.</h1><p id="resultText" class="result-text"></p><div class="reveal-card"><div class="question-label">L’IMPOSTORE ERA</div><strong id="impostorReveal"></strong></div><p id="resultError" class="inline-error hidden" role="alert"></p><button id="rematch" class="primary-button"><span>Continua</span><span class="button-icon">↻</span></button><button id="newGame" class="primary-button"><span>Nuova partita</span><span class="button-icon">+</span></button></section>
+    <section id="resultScreen" class="screen"><div id="resultIcon" class="result-medallion">✦</div><div id="resultEyebrow" class="eyebrow result-eyebrow">VERDETTO</div><h1 id="resultTitle" class="result-title">Beccato!</h1><p id="resultText" class="result-text"></p><div class="reveal-card"><div class="question-label">L’IMPOSTORE ERA</div><svg id="revealAvatar" class="av reveal-avatar s1" viewBox="0 0 200 205" focusable="false" aria-hidden="true"><use href="#mqSilhouette"/><use class="av-mark" href="#mqMark"/></svg><strong id="impostorReveal"></strong></div><p id="resultError" class="inline-error hidden" role="alert"></p><div class="actions"><button id="rematch" class="primary-button"><span>Continua</span></button><button id="newGame" class="secondary-button"><span>Nuova partita</span></button></div></section>
 
     <!-- ===== PARTY ONLINE ===== -->
     <section id="onMenuScreen" class="screen">
-      <div class="eyebrow">PARTY ONLINE</div>
       <h1 class="screen-title">Ognuno<br><span>al suo posto.</span></h1>
       <div class="setup-card on-card">
-        <span class="paperclip" aria-hidden="true"></span>
         <label class="answer-label" for="onName">IL TUO NOME</label>
         <input id="onName" class="name-input" maxlength="20" autocomplete="off" placeholder="Come ti chiami?">
-        <button id="onCreate" class="primary-button" type="button"><span>Crea partita</span><span class="button-icon">+</span></button>
+        <button id="onCreate" class="primary-button" type="button"><span>Crea partita</span></button>
         <div class="or-line"><span>OPPURE ENTRA CON UN CODICE</span></div>
         <input id="onCode" class="name-input code-input" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="CODICE">
-        <button id="onJoin" class="primary-button" type="button"><span>Entra</span><span class="button-icon">→</span></button>
+        <button id="onJoin" class="primary-button" type="button"><span>Entra</span></button>
         <p id="onMenuError" class="inline-error hidden" role="alert"></p>
         <button id="onResume" class="quiet-button hidden" type="button"></button>
       </div>
@@ -138,53 +133,56 @@
     </section>
 
     <section id="onLobbyScreen" class="screen">
-      <div class="eyebrow">SALA D'ATTESA</div>
-      <div class="setup-card lobby-card">
-        <span class="paperclip" aria-hidden="true"></span>
-        <div class="setup-heading"><span>CODICE PARTITA</span></div>
+      <h1 class="screen-title">Sospettati<br>convocati</h1>
+      <div class="code-box">
+        <div class="code-label">CODICE DEL CASO</div>
         <div id="lobbyCode" class="lobby-code" aria-live="polite"></div>
-        <p class="lobby-help">Dettate il codice agli altri: entrano da "Party online".</p>
-        <div class="setup-heading"><span>SOSPETTATI PRESENTI</span><span id="lobbyCount">1 / 7</span></div>
-        <div id="lobbyPlayers" class="player-list"></div>
-        <p id="lobbyNotice" class="notice hidden"></p>
-        <p id="lobbyHint" class="lobby-hint"></p>
+      </div>
+      <p class="lobby-help">Dettate il codice agli altri</p>
+      <div id="lobbyPlayers" class="tile-grid"></div>
+      <p id="lobbyNotice" class="notice hidden"></p>
+      <p id="lobbyHint" class="lobby-hint"></p>
+      <div class="actions">
         <button id="onStart" class="primary-button hidden" type="button"><span>Apri le indagini</span><span class="button-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M19 5v6a4 4 0 0 1-4 4H5"/><path d="M9 11l-4 4 4 4"/></svg></span></button>
       </div>
     </section>
 
     <section id="onTurnScreen" class="screen">
-      <div class="round-progress"><div class="progress-copy"><span>RISPOSTE <b id="onProgressText">0 / 3</b></span><span id="onProgressHint">UNA PER SOSPETTATO</span></div><div class="progress-track"><div id="onProgressFill"></div></div></div>
-      <div class="private-stage">
-        <div class="private-seal"><span>❋</span></div>
-        <div class="eyebrow" id="onEyebrow">SOLO PER TE</div>
-        <h2><span id="onTurnLine">La scheda di</span><br><span id="onMe"></span></h2>
-        <p id="onNotice" class="notice hidden"></p>
-        <div id="onAnswerArea" class="question-area">
-          <div class="question-label">LA TUA DOMANDA</div>
-          <p id="onQuestion" class="question-text"></p>
-          <label class="answer-label" for="onAnswer">LA TUA RISPOSTA</label>
-          <input id="onAnswer" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off">
-          <p id="onAnswerError" class="inline-error hidden" role="alert"></p>
-          <button id="onSend" class="primary-button" type="button"><span>Metti a verbale</span><span class="button-icon">✓</span></button>
+      <p id="onNotice" class="notice hidden"></p>
+      <div id="onAnswerView">
+        <div class="private-stage">
+          <svg id="onAvatar" class="av stage-avatar s1" viewBox="0 0 200 205" focusable="false" aria-hidden="true"><use href="#mqSilhouette"/><use class="av-mark" href="#mqMark"/></svg>
+          <div class="eyebrow" id="onEyebrow">SOLO PER TE</div>
+          <h2><span id="onTurnLine">La scheda di</span><br><span id="onMe"></span></h2>
+          <div id="onAnswerArea" class="question-area">
+            <div class="question-label">LA TUA DOMANDA</div>
+            <p id="onQuestion" class="question-text"></p>
+            <label class="answer-label" for="onAnswer">LA TUA RISPOSTA</label>
+            <input id="onAnswer" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off">
+            <p id="onAnswerError" class="inline-error hidden" role="alert"></p>
+          </div>
+          <p id="onSpectator" class="turn-helper hidden">Questo round è già in corso senza di te. Rientrerai al prossimo.</p>
         </div>
-        <div id="onWaitArea" class="question-area hidden">
-          <div class="question-label">LA TUA RISPOSTA A VERBALE</div>
-          <p id="onMyAnswer" class="wait-answer"></p>
-          <div class="question-label">IN ATTESA DEGLI ALTRI</div>
-          <div id="onWaitList" class="wait-list"></div>
-          <button id="onSkipAbsent" class="quiet-button hidden" type="button">Prosegui senza gli assenti</button>
-          <p id="onWaitHint" class="lobby-hint"></p>
+        <p class="privacy-note">Copri lo schermo. La domanda è solo tua.</p>
+        <div id="onAnswerActions" class="actions">
+          <button id="onSend" class="primary-button" type="button"><span>Metti a verbale</span></button>
         </div>
-        <p id="onSpectator" class="turn-helper hidden">Questo round è già in corso senza di te. Rientrerai al prossimo.</p>
       </div>
-      <div class="privacy-note"><span>◉</span> La tua risposta resta segreta</div>
+      <div id="onWaitArea" class="hidden">
+        <h1 class="screen-title">In attesa delle<br><span>deposizioni</span></h1>
+        <p class="my-answer">La tua deposizione: <b id="onMyAnswer"></b></p>
+        <div id="onWaitList" class="tile-grid"></div>
+        <div id="onWaitSummary" class="summary-box"></div>
+        <button id="onSkipAbsent" class="quiet-button hidden" type="button">Prosegui senza gli assenti</button>
+        <p id="onWaitHint" class="lobby-hint"></p>
+      </div>
     </section>
 
-    <section id="onSummaryScreen" class="screen"><div class="eyebrow">TUTTI HANNO DEPOSTO</div><h1 class="screen-title">Confrontate<br><span>le deposizioni.</span></h1><div class="common-question"><div class="question-label">LA DOMANDA UFFICIALE</div><p id="onCommon"></p></div><div id="onAnswers" class="answers-list"></div><button id="onToVote" class="primary-button hidden" type="button"><span>Alle votazioni</span><span class="button-icon">↗</span></button><p id="onSummaryHint" class="lobby-hint"></p></section>
+    <section id="onSummaryScreen" class="screen"><h1 class="screen-title">Confrontate le<br><span>deposizioni</span></h1><div class="common-question"><div class="question-label">LA DOMANDA UFFICIALE</div><p id="onCommon"></p></div><div id="onAnswers" class="answers-list"></div><p id="onSummaryHint" class="lobby-hint"></p><div class="actions"><button id="onToVote" class="primary-button hidden" type="button"><span>Alle votazioni</span></button></div></section>
 
-    <section id="onVoteScreen" class="screen"><div class="eyebrow">VERDETTO POPOLARE</div><h1 class="screen-title">Chi vi<br><span>insospettisce?</span></h1><p class="screen-subtitle" id="onVoteSub">Indicate chi credete sia l’impostore. Il voto è segreto.</p><div id="onVoteOptions" class="vote-options"></div><div id="onVoteConfirm" class="vote-confirm-box hidden"><p id="onVoteConfirmText"></p><button id="onSign" class="primary-button" type="button"><span>Firma l’accusa</span><span class="button-icon">✓</span></button><button id="onChange" class="quiet-button" type="button">Cambia scelta</button></div><div id="onVoteWait" class="vote-wait hidden"><div class="question-label">HAI FIRMATO L’ACCUSA</div><div id="onVoteWaitList" class="wait-list"></div><button id="onSkipAbsentV" class="quiet-button hidden" type="button">Prosegui senza gli assenti</button><p id="onVoteHint" class="lobby-hint"></p></div><p id="onVoteError" class="inline-error hidden" role="alert"></p></section>
+    <section id="onVoteScreen" class="screen"><h1 class="screen-title">Chi vi<br><span>insospettisce?</span></h1><p class="screen-subtitle" id="onVoteSub">Tocca il sospettato da accusare. Il voto è segreto.</p><div id="onVoteOptions" class="tile-grid"></div><div id="onVoteWait" class="hidden"><p class="wait-label">HAI FIRMATO L’ACCUSA</p><div id="onVoteWaitList" class="tile-grid"></div><button id="onSkipAbsentV" class="quiet-button hidden" type="button">Prosegui senza gli assenti</button><p id="onVoteHint" class="lobby-hint"></p></div><p id="onVoteError" class="inline-error hidden" role="alert"></p><div class="actions"><button id="onSign" class="primary-button hidden" type="button"><span id="onSignText">Firma l’accusa</span></button></div></section>
 
-    <section id="onResultScreen" class="screen"><div id="onResultIcon" class="result-medallion">✦</div><div id="onResultEyebrow" class="eyebrow result-eyebrow">VERDETTO</div><h1 id="onResultTitle" class="result-title">Beccato.</h1><p id="onResultText" class="result-text"></p><div class="reveal-card"><div class="question-label">L’IMPOSTORE ERA</div><strong id="onImpostor"></strong></div><div class="votes-card"><div class="question-label">VOTI RICEVUTI</div><div id="onVotesList" class="wait-list"></div></div><button id="onContinue" class="primary-button hidden" type="button"><span>Continua</span><span class="button-icon">↻</span></button><button id="onNewGame" class="primary-button hidden" type="button"><span>Nuova partita</span><span class="button-icon">+</span></button><p id="onResultHint" class="lobby-hint"></p></section>
+    <section id="onResultScreen" class="screen"><div id="onResultIcon" class="result-medallion">✦</div><div id="onResultEyebrow" class="eyebrow result-eyebrow">VERDETTO</div><h1 id="onResultTitle" class="result-title">Beccato!</h1><p id="onResultText" class="result-text"></p><div class="reveal-card"><div class="question-label">L’IMPOSTORE ERA</div><svg id="onRevealAvatar" class="av reveal-avatar s1" viewBox="0 0 200 205" focusable="false" aria-hidden="true"><use href="#mqSilhouette"/><use class="av-mark" href="#mqMark"/></svg><strong id="onImpostor"></strong></div><div id="onVotesList" class="votes-list"></div><p id="onResultHint" class="lobby-hint"></p><div class="actions"><button id="onContinue" class="primary-button hidden" type="button"><span>Continua</span></button><button id="onNewGame" class="secondary-button hidden" type="button"><span>Nuova partita</span></button></div></section>
   </main>
 
   <div id="exitDialog" class="exit-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="exitQuestion">
@@ -193,6 +191,19 @@
       <p id="exitNote" class="exit-note">La partita in corso andrà persa.</p>
       <button id="exitStay" class="primary-button" type="button"><span>No, continua</span></button>
       <button id="exitConfirm" class="quiet-button exit-confirm" type="button">Sì, torna al menù</button>
+    </div>
+  </div>
+  <div id="helpDialog" class="exit-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="exit-card help-card">
+      <p id="helpTitle" class="exit-question">Come si gioca</p>
+      <ol class="help-list">
+        <li>Tutti ricevono una domanda sullo stesso tema. Una persona ne riceve una diversa, senza saperlo: è l’impostore.</li>
+        <li>Ognuno risponde in segreto, solo con un numero.</li>
+        <li>Si mostrano tutte le risposte: chi ha dato un numero che non c’entra?</li>
+        <li>Si vota chi sembra l’impostore. Il più votato viene accusato.</li>
+        <li>Se accusate quello giusto vincete voi. Altrimenti l’impostore la fa franca.</li>
+      </ol>
+      <button id="helpClose" class="primary-button" type="button"><span>Ho capito</span></button>
     </div>
   </div>
   <script src="config.js"></script>

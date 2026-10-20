@@ -387,23 +387,28 @@ function render() {
   hostDuties();
 }
 
-function avatar(name) { return el('span', 'avatar', (name.trim().slice(0, 1) || '?').toUpperCase()); }
+const seatNum = s => SEATS.indexOf(s) + 1;
 
 function renderLobby() {
   show('onLobby');
   $('lobbyCode').textContent = S.code;
   const list = $('lobbyPlayers'); list.textContent = '';
   const seats = seatsOf();
+  // la misura dei riquadri dipende da quanti ne vengono mostrati (giocatori + la tessera "In arrivo"), non dai giocatori
+  list.classList.toggle('compact', seats.length + (seats.length < SEATS.length ? 1 : 0) >= 5);
   seats.forEach(s => {
     const p = D.players[s];
-    const row = el('div', 'player-row' + (s === S.seat ? ' is-me' : ''));
-    row.append(el('span', 'dot' + (p.connected ? '' : ' off')), avatar(p.name), el('span', 'player-name', p.name));
-    if (s === D.meta.hostSeat) row.append(el('span', 'player-tag', 'HOST'));
-    if (s === S.seat) row.append(el('span', 'player-tag', 'TU'));
-    if (isAbsent(p)) row.append(el('span', 'player-tag', 'ASSENTE'));
-    list.append(row);
+    const tags = [];
+    if (s === D.meta.hostSeat) tags.push('HOST');
+    if (s === S.seat) tags.push('TU');
+    if (isAbsent(p)) tags.push('ASSENTE');
+    list.append(M.buildTile({ n: seatNum(s), name: p.name, off: !p.connected, tag: tags.join(' · '), cls: 'player-row' + (s === S.seat ? ' me' : '') }));
   });
-  $('lobbyCount').textContent = `${seats.length} / 7`;
+  if (seats.length < SEATS.length) {
+    const empty = el('div', 'tile empty');
+    empty.append(M.avatarSvg(0, 'av-empty'), el('div', 'tile-name', 'In arrivo…'));
+    list.append(empty);
+  }
   // contano solo i giocatori COLLEGATI adesso: chi e' appena caduto non fa numero
   const missing = Math.max(0, MIN_PLAYERS - connectedSeats().length);
   const host = isHost();
@@ -412,19 +417,18 @@ function renderLobby() {
   start.disabled = false;
   const need = missing === 1 ? 'almeno un altro sospettato' : `altri ${missing} sospettati`;
   $('lobbyHint').textContent = host
-    ? (missing === 0 ? 'Quando siete tutti, aprite le indagini.' : `In attesa di ${need}`)
+    ? (missing === 0 ? '' : `In attesa di ${need}`)
     : (hostAwayMsg() || (missing === 0 ? 'In attesa che l’host apra le indagini…' : `In attesa dell’host. ${missing === 1 ? 'Serve' : 'Servono'} ${need}.`));
   const n = D.meta.notice;
   say('lobbyNotice', n && n.code === 'few' ? 'Giocatori insufficienti: si torna alla sala d’attesa.' : '');
 }
 
-function waitRow(s, doneMap) {
+function waitTile(s, doneMap, pendingText) {
   const p = D.players[s] || { name: s, connected: false };
-  const row = el('div', 'wait-row' + (doneMap && doneMap[s] ? ' done' : ''));
-  row.append(el('span', 'dot' + (p.connected ? '' : ' off')), el('span', null, s === S.seat ? `${p.name} (tu)` : p.name));
-  if (isAbsent(p)) row.append(el('span', 'player-tag', 'ASSENTE'));
-  row.append(el('span', 'mark', doneMap && doneMap[s] ? '✓' : '…'));
-  return row;
+  const done = !!(doneMap && doneMap[s]);
+  const absent = isAbsent(p);
+  const tag = absent ? 'ASSENTE' : (done ? '' : pendingText);
+  return M.buildTile({ n: seatNum(s), name: s === S.seat ? `${p.name} (tu)` : p.name, off: !p.connected, ok: done, tag, cls: 'wait-row' + (done ? ' done' : ' pending') + (s === S.seat ? ' me' : '') });
 }
 
 function missingAbsent(doneMap) {
@@ -438,9 +442,10 @@ function renderTurn() {
   const seats = roundSeats();
   const inRound = !!(D.seats && D.seats[S.seat]);
   const done = seats.filter(s => D.answered && D.answered[s]).length;
-  $('onProgressText').textContent = `${done} / ${seats.length}`;
-  $('onProgressFill').style.width = `${seats.length ? (done / seats.length) * 100 : 0}%`;
+  $('topLabel').textContent = `ROUND ${round}`;
   $('onMe').textContent = S.name;
+  M.setSeat($('onAvatar'), seatNum(S.seat));
+  $('onAvatar').classList.toggle('hidden', !inRound);
   const n = D.meta.notice;
   say('onNotice', n && n.code === 'vanished' && n.round === round ? 'Un sospettato si è dileguato: si riapre il caso.' : '');
   if (ui.turnRound !== round) { ui.turnRound = round; $('onAnswer').value = ''; say('onAnswerError', ''); }
@@ -448,7 +453,9 @@ function renderTurn() {
   const answered = !!(D.answered && D.answered[S.seat]);
   const showAnswer = inRound && ready && !answered;
   const showWait = inRound && answered;
+  $('onAnswerView').classList.toggle('hidden', showWait);
   $('onAnswerArea').classList.toggle('hidden', !showAnswer);
+  $('onAnswerActions').classList.toggle('hidden', !showAnswer);
   $('onWaitArea').classList.toggle('hidden', !showWait);
   $('onSpectator').classList.toggle('hidden', inRound);
   $('onTurnLine').textContent = inRound ? 'La scheda di' : 'Round in corso';
@@ -457,7 +464,9 @@ function renderTurn() {
   if (showWait) {
     $('onMyAnswer').textContent = D.myAnswer == null ? '…' : D.myAnswer;
     const list = $('onWaitList'); list.textContent = '';
-    seats.forEach(s => list.append(waitRow(s, D.answered)));
+    list.classList.toggle('compact', seats.length >= 5);
+    seats.forEach(s => list.append(waitTile(s, D.answered, 'DEVE RISPONDERE')));
+    $('onWaitSummary').textContent = `${done} su ${seats.length} ${done === 1 ? 'ha' : 'hanno'} messo a verbale`;
     const miss = isHost() && D.hostOnly ? missingAbsent(D.answered) : null;
     $('onSkipAbsent').classList.toggle('hidden', !miss);
     $('onWaitHint').textContent = hostAwayMsg();
@@ -468,9 +477,10 @@ function renderSummary() {
   show('onSummary');
   $('onCommon').textContent = D.reveal ? D.reveal.common : '…';
   const list = $('onAnswers'); list.textContent = '';
+  list.classList.toggle('compact', roundSeats().length >= 6);
   roundSeats().forEach(s => {
     const row = el('div', 'answer-row');
-    row.append(el('span', 'answer-name', nameOf(s)), el('strong', null, D.answers && D.answers[s] != null ? D.answers[s] : '…'));
+    row.append(M.avatarSvg(seatNum(s)), el('span', 'answer-name', nameOf(s)), el('strong', null, D.answers && D.answers[s] != null ? D.answers[s] : '…'));
     list.append(row);
   });
   const host = isHost();
@@ -489,10 +499,10 @@ function renderVote() {
   if (inRound && !voted) {
     if (ui.optKey !== key) {
       ui.optKey = key; options.textContent = '';
+      options.classList.toggle('compact', targets.length >= 5);
       if (ui.vote && !targets.includes(ui.vote)) ui.vote = null;
       targets.forEach(s => {
-        const b = el('button', 'vote-option'); b.type = 'button'; b.dataset.seat = s;
-        b.append(avatar(nameOf(s)), el('strong', null, nameOf(s)), el('span', 'check'));
+        const b = M.buildTile({ n: seatNum(s), name: nameOf(s), button: true, cls: 'vote-option' }); b.dataset.seat = s;
         b.addEventListener('click', () => { ui.vote = s; paintVote(); });
         options.append(b);
       });
@@ -500,25 +510,23 @@ function renderVote() {
     paintVote();
   }
   options.classList.toggle('hidden', !(inRound && !voted));
-  $('onVoteConfirm').classList.toggle('hidden', !(inRound && !voted && ui.vote));
-  $('onVoteSub').textContent = inRound ? 'Indicate chi credete sia l’impostore. Il voto è segreto.' : 'Questo round è in corso senza di te. Guarda chi ha già votato.';
+  $('onSign').classList.toggle('hidden', !(inRound && !voted && ui.vote));
+  $('onVoteSub').textContent = inRound ? 'Tocca il sospettato da accusare. Il voto è segreto.' : 'Questo round è in corso senza di te. Guarda chi ha già votato.';
+  $('onVoteSub').classList.toggle('hidden', inRound && voted);
   const wait = $('onVoteWait');
   wait.classList.toggle('hidden', inRound && !voted);
   if (!(inRound && !voted)) {
     const list = $('onVoteWaitList'); list.textContent = '';
-    seats.forEach(s => list.append(waitRow(s, D.voted)));
+    list.classList.toggle('compact', seats.length >= 5);
+    seats.forEach(s => list.append(waitTile(s, D.voted, 'DEVE VOTARE')));
     $('onSkipAbsentV').classList.toggle('hidden', !(isHost() && D.hostOnly && missingAbsent(D.voted)));
     $('onVoteHint').textContent = hostAwayMsg();
   }
 }
 function paintVote() {
-  $('onVoteOptions').querySelectorAll('.vote-option').forEach(b => {
-    const sel = b.dataset.seat === ui.vote;
-    b.classList.toggle('selected', sel);
-    b.querySelector('.check').textContent = sel ? '✓' : '';
-  });
-  if (ui.vote) $('onVoteConfirmText').textContent = `Accusate ${nameOf(ui.vote)}?`;
-  $('onVoteConfirm').classList.toggle('hidden', !ui.vote);
+  $('onVoteOptions').querySelectorAll('.vote-option').forEach(b => b.classList.toggle('sel', b.dataset.seat === ui.vote));
+  if (ui.vote) $('onSignText').textContent = `Firma l’accusa a ${nameOf(ui.vote)}`;
+  $('onSign').classList.toggle('hidden', !ui.vote);
 }
 
 function tally() {
@@ -549,17 +557,22 @@ function renderResult() {
   $('onResultIcon').classList.toggle('is-correct', caught);
   $('onResultIcon').classList.toggle('is-wrong', !caught);
   $('onResultEyebrow').textContent = caught ? 'ACCUSA CORRETTA' : 'ACCUSA SBAGLIATA';
-  $('onResultTitle').textContent = caught ? 'Beccato.' : 'Non questa volta.';
+  $('onResultTitle').textContent = caught ? 'Beccato!' : 'Non questa volta.';
+  M.setSeat($('onRevealAvatar'), seatNum(imp));
   $('onResultText').textContent = caught ? `Avete individuato ${nameOf(imp)}.`
     : accused ? `Avete accusato ${nameOf(accused)}. L’impostore era ${nameOf(imp)}.`
       : 'Pareggio nel voto: l’impostore si salva.';
   $('onImpostor').textContent = nameOf(imp);
   const list = $('onVotesList'); list.textContent = '';
-  const shown = Array.from(new Set([...roundSeats(), ...Object.keys(counts)]));
-  shown.sort((a, b) => (counts[b] || 0) - (counts[a] || 0) || SEATS.indexOf(a) - SEATS.indexOf(b));
+  // solo chi ha ricevuto voti, dal più votato; i più votati in giallo
+  const shown = Object.keys(counts).filter(s => counts[s] > 0);
+  shown.sort((a, b) => counts[b] - counts[a] || SEATS.indexOf(a) - SEATS.indexOf(b));
+  const top = Math.max(0, ...shown.map(s => counts[s]));
+  list.classList.toggle('compact', shown.length >= 6 || roundSeats().length >= 5);
+  $('onRevealAvatar').classList.toggle('small', shown.length >= 5);
   shown.forEach(s => {
-    const row = el('div', 'wait-row');
-    row.append(el('span', null, nameOf(s)), el('span', 'count', String(counts[s] || 0)));
+    const row = el('div', 'vote-row' + (counts[s] === top ? ' top' : ''));
+    row.append(M.avatarSvg(seatNum(s)), el('span', 'answer-name', nameOf(s)), el('span', 'vote-count', `${counts[s]} ${counts[s] === 1 ? 'VOTO' : 'VOTI'}`));
     list.append(row);
   });
 }
@@ -702,7 +715,6 @@ $('onAnswer').addEventListener('input', () => say('onAnswerError', ''));
 $('onAnswer').addEventListener('keydown', e => { if (e.key === 'Enter') sendAnswer(); });
 $('onToVote').addEventListener('click', () => hostRun(() => setPhase('vote')));
 $('onSign').addEventListener('click', signVote);
-$('onChange').addEventListener('click', () => { ui.vote = null; paintVote(); });
 $('onContinue').addEventListener('click', () => startRound(null));
 $('onNewGame').addEventListener('click', () => toLobby(null));
 $('onSkipAbsent').addEventListener('click', () => excludeAbsent(D.answered));
