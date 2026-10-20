@@ -38,6 +38,14 @@ let ticker = null, renderQueued = false, hostRetry = 0, fewTimer = null, fewDead
 let connected = true, busy = false, claiming = false, leaving = false, lastFail = 0;
 let curScreen = null;
 const ui = { vote: null, optKey: '', turnRound: null };
+// fascicolo del turno privato: la domanda entra nella pagina solo a scheda aperta (vedi createSheet in app.js)
+const sheetOn = M.createSheet({ root: $('onSheet'), cover: $('onCover'), inside: $('onAnswerArea'), handle: $('onHandle'), peekBtn: $('onOpenSheet'), sendBtn: $('onSend'), template: $('onAnswerTemplate'),
+  canOpen: () => !!(D && D.priv && D.meta && D.priv.round === D.meta.round),
+  fill: box => {
+    $('onQuestion').textContent = D.priv.question;
+    box.querySelector('.sheet-who').textContent = 'FASCICOLO DI ' + String(S.name || '').toLocaleUpperCase('it');
+    const inp = $('onAnswer'); inp.addEventListener('input', () => say('onAnswerError', '')); inp.addEventListener('keydown', e => { if (e.key === 'Enter') sendAnswer(); });
+  } });
 
 const now = () => Date.now() + offset;
 const base = () => `games/${S.code}`;
@@ -91,7 +99,7 @@ async function showResume() {
 }
 
 // ---------- messaggi e schermate ----------
-function say(id, msg) { const e = $(id); e.textContent = msg || ''; e.classList.toggle('hidden', !msg); }
+function say(id, msg) { const e = $(id); if (!e) return; e.textContent = msg || ''; e.classList.toggle('hidden', !msg); }
 function show(name) { if (curScreen !== name) { curScreen = name; M.showScreen(name); } }
 
 // ---------- crea / entra ----------
@@ -448,19 +456,18 @@ function renderTurn() {
   $('onAvatar').classList.toggle('hidden', !inRound);
   const n = D.meta.notice;
   say('onNotice', n && n.code === 'vanished' && n.round === round ? 'Un sospettato si è dileguato: si riapre il caso.' : '');
-  if (ui.turnRound !== round) { ui.turnRound = round; $('onAnswer').value = ''; say('onAnswerError', ''); }
+  if (ui.turnRound !== round) { ui.turnRound = round; sheetOn.reset(); }
   const ready = D.priv && D.priv.round === round;
   const answered = !!(D.answered && D.answered[S.seat]);
   const showAnswer = inRound && ready && !answered;
   const showWait = inRound && answered;
   $('onAnswerView').classList.toggle('hidden', showWait);
-  $('onAnswerArea').classList.toggle('hidden', !showAnswer);
-  $('onAnswerActions').classList.toggle('hidden', !showAnswer);
+  if (!showAnswer) sheetOn.reset();
+  $('onHandle').disabled = !ready;
+  $('onSheet').classList.toggle('hidden', !inRound);
+  $('onSpectatorCard').classList.toggle('hidden', inRound);
   $('onWaitArea').classList.toggle('hidden', !showWait);
-  $('onSpectator').classList.toggle('hidden', inRound);
-  $('onTurnLine').textContent = inRound ? 'La scheda di' : 'Round in corso';
   $('onMe').classList.toggle('hidden', !inRound);
-  if (showAnswer) $('onQuestion').textContent = D.priv.question;
   if (showWait) {
     $('onMyAnswer').textContent = D.myAnswer == null ? '…' : D.myAnswer;
     const list = $('onWaitList'); list.textContent = '';
@@ -579,13 +586,15 @@ function renderResult() {
 
 // ---------- azioni del giocatore ----------
 async function sendAnswer() {
-  const val = $('onAnswer').value.trim();
+  const inp = $('onAnswer'); if (!inp) return;
+  const val = inp.value.trim();
   if (val === '' || !Number.isFinite(Number(val))) { say('onAnswerError', 'Serve una risposta numerica.'); return; }
   if (val.length > 24) { say('onAnswerError', 'Numero troppo lungo.'); return; }
   say('onAnswerError', '');
   const btn = $('onSend'); btn.disabled = true;
   try {
     await withTimeout(update(ref(db), { [`${base()}/answers/${S.seat}`]: val, [`${base()}/answered/${S.seat}`]: true }), 10000);
+    sheetOn.reset();
   } catch (e) {
     console.warn(e); say('onAnswerError', 'Non sono riuscito a mettere a verbale. Riprova.');
   } finally { btn.disabled = false; }
@@ -711,8 +720,6 @@ $('onCode').addEventListener('input', e => { e.target.value = e.target.value.toU
 $('onName').addEventListener('input', () => say('onMenuError', ''));
 $('onStart').addEventListener('click', () => startRound(null));
 $('onSend').addEventListener('click', sendAnswer);
-$('onAnswer').addEventListener('input', () => say('onAnswerError', ''));
-$('onAnswer').addEventListener('keydown', e => { if (e.key === 'Enter') sendAnswer(); });
 $('onToVote').addEventListener('click', () => hostRun(() => setPhase('vote')));
 $('onSign').addEventListener('click', signVote);
 $('onContinue').addEventListener('click', () => startRound(null));

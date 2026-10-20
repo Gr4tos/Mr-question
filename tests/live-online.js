@@ -31,7 +31,7 @@ let H = null;
 const phone = async label => { const p = await H.newPlayer(label, { fake: false }); p.alive = true; return p; };
 const allOn = async (ps, id) => { for (const p of ps) await p.waitScreen(id); };
 const inLobby = (p, n) => p.waitFor(k => document.querySelectorAll('#lobbyPlayers .player-row').length === k, n, undefined, `${n} giocatori in sala`);
-const ready = p => p.waitFor(() => !document.getElementById('onAnswerArea').classList.contains('hidden'), null, undefined, 'la scheda con la domanda');
+const ready = p => p.waitFor(() => { const e = document.getElementById('onHandle'); return !!e && !e.disabled && e.getClientRects().length > 0; }, null, 8000, 'la scheda chiusa, pronta da aprire');
 const gread = (p, code, path) => L.read(p, `games/${code}/${path}`);
 async function seatsByName(p, code) {
   const r = await gread(p, code, 'players');
@@ -68,7 +68,7 @@ async function castVote(p, targetName) {
 }
 // chi e' l'impostore, dedotto dalle domande mostrate sui telefoni
 async function impostorByQuestions(ps) {
-  const qs = {}; for (const p of ps) qs[p.name] = await p.text('#onQuestion');
+  const qs = {}; for (const p of ps) qs[p.name] = await p.readQuestion();
   const counts = {}; Object.values(qs).forEach(q => { counts[q] = (counts[q] || 0) + 1; });
   const common = Object.keys(counts).find(q => counts[q] > 1);
   return { common, impostor: Object.keys(qs).find(n => qs[n] !== common), qs };
@@ -340,7 +340,7 @@ async function l4() {
   const own = (await gread(a, code, 'players/p3')).value;
   T('il posto p3 ha il nuovo proprietario e il nome originale', own && own.owner !== oldUid && own.name === 'Carlo', own && { nome: own.name, cambiatoProprietario: own.owner !== oldUid });
   await x.waitScreen('onTurnScreen'); await ready(x);
-  T('il nuovo telefono legge la domanda privata di quel posto', (await x.text('#onQuestion')).length > 0);
+  T('il nuovo telefono legge la domanda privata di quel posto', (await x.readQuestion()).length > 0);
   await mustDeny(T, 'il vecchio proprietario (uid) non puo\' piu\' scrivere nel posto', a, "await D.update(D.ref(db, arg.path), { connected: false }); return true;", { path: `games/${code}/players/p3` });
   await x.answer(3);
   await allOn([a, b, d, x], 'onSummaryScreen'); await summaryReady([a, b, d, x], 4);

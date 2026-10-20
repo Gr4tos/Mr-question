@@ -5,7 +5,7 @@ const check = (label, cond, extra) => { if (cond) passes++; else fails++; consol
 
 async function playRound(p, n, answers) {
   for (let i = 0; i < n; i++) {
-    await p.click('#showQuestion');
+    await p.openSheet();
     await p.type('#answerInput', String(answers ? answers[i] : i + 1));
     await p.click('#confirmAnswer'); await p.settle(60);
   }
@@ -87,7 +87,7 @@ async function vote(p, wrong) {
 
     // uscita a meta' partita
     await p.click('#startGame'); await p.waitScreen('turnScreen');
-    await p.click('#showQuestion'); await p.type('#answerInput', '42');
+    await p.openSheet(); await p.type('#answerInput', '42');
     const q = await p.text('#questionText');
     await p.exit(false);
     check('"No, continua": domanda, risposta scritta e turno restano', (await p.screen()) === 'turnScreen' && (await p.text('#questionText')) === q && (await p.value('#answerInput')) === '42');

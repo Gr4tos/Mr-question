@@ -103,12 +103,34 @@ class Player {
     await this.click('#onJoin');
     await this.waitScreen('onLobbyScreen');
   }
+  // apre il fascicolo del turno privato da tastiera (maniglia + Invio = apertura diretta) e aspetta il campo di risposta
+  async openSheet() {
+    const online = await this.page.evaluate(() => document.getElementById('onTurnScreen').classList.contains('active'));
+    const handle = online ? '#onHandle' : '#turnHandle', field = online ? '#onAnswer' : '#answerInput';
+    if (await this.page.$(field)) return; // già aperta
+    await this.waitFor(s => { const e = document.querySelector(s); return !!e && !e.disabled && e.getClientRects().length > 0; }, handle, undefined, 'la maniglia del fascicolo');
+    await this.page.focus(handle); await this.page.keyboard.press('Enter');
+    await this.waitFor(s => !!document.querySelector(s), field, undefined, 'il campo di risposta');
+  }
+  async closeSheet() {
+    await this.waitFor(() => [...document.querySelectorAll('.sheet-cover')].every(c => getComputedStyle(c).visibility === 'hidden' || !c.closest('.sheet').querySelector('.sheet-grabber')), null, undefined, 'la copertina sollevata');
+    await this.page.click('.sheet-grabber');
+    await this.waitFor(() => !document.querySelector('.sheet-grabber') && !document.getElementById('answerInput') && !document.getElementById('onAnswer'), null, undefined, 'la scheda chiusa');
+  }
+  // legge la domanda privata: apre la scheda, la legge, la richiude
+  async readQuestion() {
+    const online = await this.page.evaluate(() => document.getElementById('onTurnScreen').classList.contains('active'));
+    await this.openSheet();
+    const t = await this.text(online ? '#onQuestion' : '#questionText');
+    await this.closeSheet();
+    return t;
+  }
   // il telefono perde la connessione / la ritrova
   offline() { this.h.backend.goOffline(this.clientId); return this.settle(); }
   online() { this.h.backend.goOnline(this.clientId); return this.settle(); }
   // risposta numerica nel proprio turno online
   async answer(value) {
-    await this.waitFor(() => !document.getElementById('onAnswerArea').classList.contains('hidden'), null, undefined, 'la scheda con la domanda');
+    await this.openSheet();
     await this.type('#onAnswer', String(value));
     await this.click('#onSend');
     // l'ultimo a rispondere passa subito al riepilogo: va bene anche se "in attesa" non fa in tempo a comparire

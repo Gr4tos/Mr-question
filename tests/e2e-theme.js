@@ -71,7 +71,7 @@ async function open(h, label, scheme, preset) {
       const outline = await p.page.evaluate(() => { const s = getComputedStyle(document.querySelector('.emblem-face')); return { stroke: s.stroke, w: s.strokeWidth }; });
       check(`${pick}: contorno della sagoma ${pick === 'light' ? 'presente (scuro)' : 'assente'}`, pick === 'light' ? /43, 38, 32/.test(outline.stroke) && parseFloat(outline.w) > 0 : (/rgba\(0, 0, 0, 0\)|none/.test(outline.stroke) || parseFloat(outline.w) === 0), outline);
       await p.click('#goLocal'); await p.waitScreen('homeScreen'); await p.click('#startGame'); await p.waitScreen('turnScreen');
-      await p.click('#showQuestion'); await p.type('#answerInput', '12');
+      await p.openSheet(); await p.type('#answerInput', '12');
       await p.click('#exitButton'); await p.settle(400);
       const d = await p.page.evaluate(() => {
         const e = document.getElementById('exitDialog'), cs = getComputedStyle(e);

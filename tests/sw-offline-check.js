@@ -16,7 +16,7 @@ const check = (label, ok, extra) => { if (!ok) bad++; console.log(`${ok ? 'OK  '
       const c = await caches.open(names[0]);
       return { names, urls: (await c.keys()).map(r => new URL(r.url).pathname) };
     });
-    check('cache attiva v19', info.names.length === 1 && info.names[0] === 'mr-question-shell-v19', info.names);
+    check('cache attiva v21', info.names.length === 1 && info.names[0] === 'mr-question-shell-v21', info.names);
     check('online.js e i font sono in cache', ['/online.js', '/app.js', '/assets/fonts/inter-latin.woff2', '/assets/fonts/special-elite-latin.woff2'].every(u => info.urls.includes(u)));
     check('l\'SDK Firebase non e\' stato scaricato all\'installazione', !info.urls.some(u => u.includes('vendor/firebase')));
     await p.page.setOfflineMode(true);

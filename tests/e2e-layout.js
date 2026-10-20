@@ -44,8 +44,9 @@ async function pinned(p, label, sel) {
       for (let i = 0; i < 4; i++) await p.click('#plusPlayers');
       await pinned(p, 'impostazione (7 giocatori)', '#startGame');
       await p.click('#startGame'); await p.waitScreen('turnScreen');
-      await pinned(p, 'turno privato, scheda chiusa', '#showQuestion');
-      await p.click('#showQuestion'); await p.settle(100);
+      const emptyBar = await p.page.evaluate(() => getComputedStyle(document.getElementById('showQuestion').closest('.actions')).display === 'none');
+      check('turno privato, scheda chiusa: nessuna barra di pulsanti (il pulsante compare solo dopo aver toccato la maniglia)', emptyBar);
+      await p.openSheet(); await p.settle(400);
       const m = await pinned(p, 'turno privato, domanda aperta', '#confirmAnswer');
       // tastiera aperta: la barra torna nel flusso e non copre il campo
       await p.page.evaluate(() => document.documentElement.classList.add('kb'));
@@ -55,7 +56,7 @@ async function pinned(p, label, sel) {
       const cover = await p.page.evaluate(() => { window.scrollTo(0, 0); const inp = document.getElementById('answerInput').getBoundingClientRect(); const b = document.querySelector('#confirmAnswer').closest('.actions').getBoundingClientRect(); return { inputBottom: Math.round(inp.bottom), barTop: Math.round(b.top) }; });
       check('tastiera chiusa: il campo di risposta sta sopra la barra', cover.inputBottom <= cover.barTop, cover);
       await p.type('#answerInput', '3'); await p.click('#confirmAnswer'); await p.settle(80);
-      for (let i = 1; i < 7; i++) { await p.click('#showQuestion'); await p.type('#answerInput', String(i + 2)); await p.click('#confirmAnswer'); await p.settle(60); }
+      for (let i = 1; i < 7; i++) { await p.openSheet(); await p.type('#answerInput', String(i + 2)); await p.click('#confirmAnswer'); await p.settle(60); }
       await p.waitScreen('voteScreen');
       await pinned(p, 'riepilogo (7 risposte)', '#goVote');
       await p.click('#goVote'); await p.settle(80);
@@ -79,7 +80,8 @@ async function pinned(p, label, sel) {
     await a.settle(200);
     check('sala con 4 giocatori (5 riquadri con "In arrivo"): versione compatta, perché i riquadri mostrati sono 5', await gridRule(a, '#lobbyPlayers', true), await a.page.evaluate(() => document.getElementById('lobbyPlayers').children.length));
     await a.click('#onStart');
-    for (const p of [a, b, c, d]) { await p.waitScreen('onTurnScreen'); await p.waitFor(() => !document.getElementById('onAnswerArea').classList.contains('hidden'), null, 8000, 'domanda'); }
+    for (const p of [a, b, c, d]) { await p.waitScreen('onTurnScreen'); await p.waitFor(() => { const e = document.getElementById('onHandle'); return !!e && !e.disabled; }, null, 8000, 'la scheda'); }
+    await a.openSheet(); await a.settle(400);
     const mo = await pinned(a, 'risposta online', '#onSend');
     const inp = await a.page.evaluate(() => { window.scrollTo(0, 0); return { inputBottom: Math.round(document.getElementById('onAnswer').getBoundingClientRect().bottom), barTop: Math.round(document.getElementById('onSend').closest('.actions').getBoundingClientRect().top) }; });
     check('risposta online: il campo sta sopra la barra', inp.inputBottom <= inp.barTop, inp);
@@ -109,7 +111,7 @@ async function pinned(p, label, sel) {
     check('sala con 7 giocatori (7 riquadri): compatta', await gridRule(q[0], '#lobbyPlayers', true));
     await pinned(q[0], 'sala con 7 giocatori', '#onStart');
     await q[0].click('#onStart');
-    for (const p of q) { await p.waitScreen('onTurnScreen'); await p.waitFor(() => !document.getElementById('onAnswerArea').classList.contains('hidden'), null, 10000, 'domanda'); }
+    for (const p of q) { await p.waitScreen('onTurnScreen'); await p.waitFor(() => { const e = document.getElementById('onHandle'); return !!e && !e.disabled; }, null, 10000, 'la scheda'); }
     for (let i = 0; i < 6; i++) await q[i].answer(i + 1);
     check('attesa con 7 riquadri: compatta', await gridRule(q[0], '#onWaitList', true));
     await q[6].answer(7);

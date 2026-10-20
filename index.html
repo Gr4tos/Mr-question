@@ -96,16 +96,18 @@
     </section>
 
     <section id="turnScreen" class="screen">
-      <div class="private-stage">
-        <svg id="turnAvatar" class="av stage-avatar s1" viewBox="0 0 200 205" focusable="false" aria-hidden="true"><use href="#mqSilhouette"/><use class="av-mark" href="#mqMark"/></svg>
-        <div class="eyebrow">SOLO PER TE</div>
-        <h2>Il turno di<br><span id="currentPlayerName">Sospettato 1</span></h2>
-        <p class="turn-helper">Assicurati che nessun altro guardi.</p>
-        <div id="questionArea" class="question-area hidden"><div class="question-label">LA TUA DOMANDA</div><p id="questionText" class="question-text"></p><label class="answer-label" for="answerInput">LA TUA RISPOSTA</label><input id="answerInput" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off"><p id="answerError" class="inline-error hidden" role="alert"></p></div>
+      <div id="turnSheet" class="sheet">
+        <div id="questionArea" class="sheet-inside hidden"></div>
+        <div id="turnCover" class="sheet-cover">
+          <div class="eyebrow">FASCICOLO RISERVATO · SOLO PER TE</div>
+          <svg id="turnAvatar" class="av stage-avatar s1" viewBox="0 0 200 205" focusable="false" aria-hidden="true"><use href="#mqSilhouette"/><use class="av-mark" href="#mqMark"/></svg>
+          <h2>Il turno di<br><span id="currentPlayerName">Sospettato 1</span></h2>
+          <button id="turnHandle" class="sheet-handle" type="button" aria-controls="questionArea" aria-expanded="false"><span class="handle-bar" aria-hidden="true"></span><span class="handle-text"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg>Scorri per aprire il fascicolo</span></button>
+        </div>
       </div>
       <p class="privacy-note">Copri lo schermo. La domanda è solo tua.</p>
       <div class="actions">
-        <button id="showQuestion" class="primary-button"><span>Apri la scheda</span></button>
+        <button id="showQuestion" class="primary-button hidden"><span>Apri il fascicolo</span></button>
         <button id="confirmAnswer" class="primary-button hidden"><span>Metti a verbale</span></button>
       </div>
     </section>
@@ -150,22 +152,23 @@
     <section id="onTurnScreen" class="screen">
       <p id="onNotice" class="notice hidden"></p>
       <div id="onAnswerView">
-        <div class="private-stage">
-          <svg id="onAvatar" class="av stage-avatar s1" viewBox="0 0 200 205" focusable="false" aria-hidden="true"><use href="#mqSilhouette"/><use class="av-mark" href="#mqMark"/></svg>
-          <div class="eyebrow" id="onEyebrow">SOLO PER TE</div>
-          <h2><span id="onTurnLine">La scheda di</span><br><span id="onMe"></span></h2>
-          <div id="onAnswerArea" class="question-area">
-            <div class="question-label">LA TUA DOMANDA</div>
-            <p id="onQuestion" class="question-text"></p>
-            <label class="answer-label" for="onAnswer">LA TUA RISPOSTA</label>
-            <input id="onAnswer" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off">
-            <p id="onAnswerError" class="inline-error hidden" role="alert"></p>
+        <div id="onSheet" class="sheet">
+          <div id="onAnswerArea" class="sheet-inside hidden"></div>
+          <div id="onCover" class="sheet-cover">
+            <div class="eyebrow" id="onEyebrow">FASCICOLO RISERVATO · SOLO PER TE</div>
+            <svg id="onAvatar" class="av stage-avatar s1" viewBox="0 0 200 205" focusable="false" aria-hidden="true"><use href="#mqSilhouette"/><use class="av-mark" href="#mqMark"/></svg>
+            <h2><span id="onTurnLine">La scheda di</span><br><span id="onMe"></span></h2>
+            <button id="onHandle" class="sheet-handle" type="button" aria-controls="onAnswerArea" aria-expanded="false"><span class="handle-bar" aria-hidden="true"></span><span class="handle-text"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg>Scorri per aprire il fascicolo</span></button>
           </div>
-          <p id="onSpectator" class="turn-helper hidden">Questo round è già in corso senza di te. Rientrerai al prossimo.</p>
+        </div>
+        <div id="onSpectatorCard" class="private-stage hidden">
+          <h2>Round in corso</h2>
+          <p id="onSpectator" class="turn-helper">Questo round è già in corso senza di te. Rientrerai al prossimo.</p>
         </div>
         <p class="privacy-note">Copri lo schermo. La domanda è solo tua.</p>
         <div id="onAnswerActions" class="actions">
-          <button id="onSend" class="primary-button" type="button"><span>Metti a verbale</span></button>
+          <button id="onOpenSheet" class="primary-button hidden" type="button"><span>Apri il fascicolo</span></button>
+          <button id="onSend" class="primary-button hidden" type="button"><span>Metti a verbale</span></button>
         </div>
       </div>
       <div id="onWaitArea" class="hidden">
@@ -206,6 +209,25 @@
       <button id="helpClose" class="primary-button" type="button"><span>Ho capito</span></button>
     </div>
   </div>
+  <!-- Contenuto del fascicolo aperto. Sta in un <template>: a scheda chiusa NON è nella pagina. -->
+  <template id="answerTemplate">
+    <button type="button" class="sheet-grabber" aria-label="Copri il fascicolo"><span class="handle-bar" aria-hidden="true"></span></button>
+    <div class="question-label sheet-who"></div>
+    <div class="question-label">LA TUA DOMANDA</div>
+    <p id="questionText" class="question-text"></p>
+    <label class="answer-label" for="answerInput">LA TUA RISPOSTA</label>
+    <input id="answerInput" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off">
+    <p id="answerError" class="inline-error hidden" role="alert"></p>
+  </template>
+  <template id="onAnswerTemplate">
+    <button type="button" class="sheet-grabber" aria-label="Copri il fascicolo"><span class="handle-bar" aria-hidden="true"></span></button>
+    <div class="question-label sheet-who"></div>
+    <div class="question-label">LA TUA DOMANDA</div>
+    <p id="onQuestion" class="question-text"></p>
+    <label class="answer-label" for="onAnswer">LA TUA RISPOSTA</label>
+    <input id="onAnswer" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off">
+    <p id="onAnswerError" class="inline-error hidden" role="alert"></p>
+  </template>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>

@@ -25,7 +25,7 @@ function game(h, code) {
 const screenText = (p, id) => p.page.$eval(`#${id}`, e => e.innerText);
 const allOn = async (ps, id) => { for (const p of ps) await p.waitScreen(id); };
 const inLobby = (p, n) => p.waitFor(k => document.querySelectorAll('#lobbyPlayers .player-row').length === k, n, 8000, `${n} giocatori in sala`);
-const ready = p => p.waitFor(() => !document.getElementById('onAnswerArea').classList.contains('hidden'), null, 8000, 'la scheda con la domanda');
+const ready = p => p.waitFor(() => { const e = document.getElementById('onHandle'); return !!e && !e.disabled && e.getClientRects().length > 0; }, null, 8000, 'la scheda chiusa, pronta da aprire');
 
 async function castVote(p, targetName) {
   await p.waitScreen('onVoteScreen');
@@ -70,7 +70,7 @@ async function s1(h) {
   const impSeat = g.impostor(), impName = g.nameOf(impSeat), imp = by[impName];
   for (const n of Object.keys(by)) check(`${n}: la sagoma del suo turno ha il colore del suo posto`, await fillIs(by[n], '#onAvatar', g.seatOf(n)));
   const common = g.val('reveal/common');
-  const qs = {}; for (const n of Object.keys(by)) qs[n] = await by[n].text('#onQuestion');
+  const qs = {}; for (const n of Object.keys(by)) qs[n] = await by[n].readQuestion();
   check('chi non e\' impostore riceve la domanda comune', Object.keys(by).filter(n => n !== impName).every(n => qs[n] === common), qs);
   check('l\'impostore riceve una domanda diversa', qs[impName] !== common && qs[impName].length > 0);
   for (const p of [a, b, c]) check(`${p.label}: nessun testo rivela l'impostore`, !/impostor/i.test(await screenText(p, 'onTurnScreen')));
@@ -79,7 +79,7 @@ async function s1(h) {
   check('il round e\' il numero 1 e l\'indice e\' aggiornato', g.val('meta/round') === 1 && typeof h.backend.valueAt(`index/${code}`) === 'number');
 
   // risposte: nessuno vede quelle altrui prima che abbiano risposto tutti
-  await a.click('#onSend'); check('risposta vuota: messaggio inline', await a.visible('#onAnswerError'));
+  await a.openSheet(); await a.click('#onSend'); check('risposta vuota: messaggio inline', await a.visible('#onAnswerError'));
   await a.answer(111);
   check('Anna: vede la propria risposta a verbale', (await a.text('#onMyAnswer')) === '111');
   await b.answer(222); await a.settle();
@@ -133,7 +133,7 @@ async function s1(h) {
   await allOn([a, b, c], 'onTurnScreen'); for (const p of [a, b, c]) await ready(p);
   const imp2 = g.impostor();
   check('round 2 con un altro impostore', g.val('meta/round') === 2 && imp2 !== impSeat, `${impSeat} -> ${imp2}`);
-  check('risposte e voti azzerati; timbro di nuovo APERTO', g.val('answered') === null && g.val('votes') === null && g.val('result') === null && (await stamp(b)) === 'CASO APERTO' && (await b.value('#onAnswer')) === '');
+  check('risposte e voti azzerati; timbro di nuovo APERTO', g.val('answered') === null && g.val('votes') === null && g.val('result') === null && (await stamp(b)) === 'CASO APERTO' && !(await b.exists('#onAnswer')));
   const imp2Name = g.nameOf(imp2);
   await a.answer(1); await b.answer(2); await c.answer(3);
   await allOn([a, b, c], 'onSummaryScreen'); await a.click('#onToVote');
@@ -199,7 +199,7 @@ async function s3(h) {
   check('il telefono scollegato mostra il banner', await b.visible('#netBanner'));
   await b.online(); await a.settle();
   check('se rientra dallo stesso telefono torna collegato e il banner sparisce', g.val('players/p2/connected') === true && !(await b.visible('#netBanner')) && (await a.page.$$eval('#onWaitList .dot.off', e => e.length)) === 0);
-  check('dopo il rientro rivede la propria domanda', await b.visible('#onAnswerArea') && (await b.text('#onQuestion')).length > 0);
+  check('dopo il rientro rivede la propria domanda', (await b.readQuestion()).length > 0);
   // un altro telefono con lo stesso nome (maiuscole diverse)
   await b.offline();
   const b2 = await h.newPlayer('Bea2');
@@ -211,7 +211,7 @@ async function s3(h) {
   const newUid = await b2.page.evaluate(() => localStorage.getItem('fake_uid'));
   check('dopo 46 s: il nuovo telefono riprende il posto p2 con il nome originale', g.val('players/p2/owner') === newUid && g.val('players/p2/name') === 'Bea' && (await b2.text('#onMe')) === 'Bea');
   await ready(b2);
-  check('il nuovo telefono rivede la domanda privata di quel posto', (await b2.text('#onQuestion')).length > 0);
+  check('il nuovo telefono rivede la domanda privata di quel posto', (await b2.readQuestion()).length > 0);
   await b2.answer(222);
   check('e puo\' rispondere', g.val('answers/p2') === '222');
   await b.online(); await b.settle(300);
@@ -371,7 +371,7 @@ async function s7(h) {
   check('sala da 7 a 375 px: nessuno scroll orizzontale', !(await geo(ps[0])).hOver);
   await shot(ps[0], 'lobby-7-375x667');
   await ps[0].click('#onStart'); await allOn(ps, 'onTurnScreen'); for (const p of ps) await ready(p);
-  check('7 domande ricevute, 6 comuni e 1 diversa', await (async () => { const q = []; for (const p of ps) q.push(await p.text('#onQuestion')); return new Set(q).size === 2; })());
+  check('7 domande ricevute, 6 comuni e 1 diversa', await (async () => { const q = []; for (const p of ps) q.push(await p.readQuestion()); return new Set(q).size === 2; })());
   check('turno a 375 px senza scroll orizzontale', !(await geo(ps[1])).hOver);
   await shot(ps[1], 'turn-375x667');
   for (let i = 0; i < 7; i++) await ps[i].answer(i + 1);
@@ -404,7 +404,7 @@ async function s8(h) {
   await a.click('#goLocal');
   check('offline: "Un solo telefono" funziona', (await a.screen()) === 'homeScreen');
   await a.click('#startGame'); await a.waitScreen('turnScreen');
-  await a.click('#showQuestion'); await a.type('#answerInput', '4'); await a.click('#confirmAnswer');
+  await a.openSheet(); await a.type('#answerInput', '4'); await a.click('#confirmAnswer');
   check('offline: la partita locale va avanti', (await a.screen()) === 'turnScreen' && (await a.text('#topLabel')) === 'TURNO 2 / 3');
   await a.exit(false);
   check('uscita locale: stessi testi di prima', true);
