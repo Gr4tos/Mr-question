@@ -23,6 +23,7 @@
    theme.js imposta data-theme (chiaro/scuro) prima del primo disegno: "Automatico" segue prefers-color-scheme.
    Valori del tema scuro presi da design/design-reference.html ("party dossier"). */
 :root{
+  --mrq-version: "6994c8e320"; /* impronta di questo file (la scrive tests/bump-version.js) */
   color-scheme: dark;
   /* pagina (tavolo) e testi che stanno direttamente sul fondo */
   --ink:        #150d0b;   /* fondo pagina */
@@ -328,7 +329,7 @@ button{ touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color
 
 .name-fields{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
 .name-input{ width:100%; min-width:0; border:1px solid var(--paper-edge); border-radius:12px;
-  background: var(--paper-3); color: var(--paper-ink); padding:12px; font-size:14px; outline:none; }
+  background: var(--paper-3); color: var(--paper-ink); padding:12px; font-size:16px; outline:none; }
 .name-input::placeholder{ color: var(--placeholder); }
 .name-input:focus{ border-color: var(--stamp); box-shadow:0 0 0 3px var(--focus-ring); }
 
@@ -477,7 +478,7 @@ button.tile{ cursor:pointer; }
 
 .privacy-note{ text-align:center; margin:14px 0; font-size:12px; color: var(--on-bg-2); }
 
-.hidden{ display:none !important; }
+.hidden, [hidden]{ display:none !important; }
 
 /* RIEPILOGO / DEPOSIZIONI ---------------------------------------- */
 .common-question{ margin:16px 0 10px; padding:14px; border-radius: var(--radius);
@@ -534,7 +535,7 @@ button.tile{ cursor:pointer; }
   font-family: var(--mono); font-size:10px; letter-spacing:.12em; color: var(--paper-ink3); }
 .or-line::before, .or-line::after{ content:""; flex:1; border-top:1px dashed var(--paper-line); }
 .on-card .answer-label{ margin-bottom:0; }
-.on-card .name-input{ margin-top:8px; font-size:15px; }
+.on-card .name-input{ margin-top:8px; font-size:16px; }
 .code-input{ text-align:center; text-transform:uppercase; font-family: var(--mono); font-size:22px;
   letter-spacing:.32em; padding-left: calc(12px + .32em); }
 .code-input::placeholder{ letter-spacing:.2em; font-size:14px; }
@@ -565,6 +566,17 @@ button.tile{ cursor:pointer; }
 .few-count{ white-space:nowrap; }
 .net-banner{ margin:0 0 8px; padding:7px 10px; border:1px dashed var(--stamp-top); border-radius:4px;
   text-align:center; font-family: var(--mono); font-size:10px; letter-spacing:.06em; color: var(--stamp-top); }
+
+/* Banner "nuova versione" (compare solo nel menù e nel verdetto) e schermata d'errore all'avvio */
+.update-banner{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 10px; padding:8px 8px 8px 14px;
+  background: var(--tile); border:1.5px solid var(--tile-2-line); border-radius:18px; color: var(--on-bg); font-size:13px; font-weight:700; letter-spacing:-.01em; }
+.update-button{ min-height:44px; padding:0 18px; border:0; border-radius:14px; background: var(--btn-bg); color: var(--btn-ink);
+  font-family: var(--sans); font-weight:800; font-size:14px; box-shadow: 0 3px 0 var(--btn-edge); }
+.update-button:active{ transform: translateY(2px); box-shadow: 0 1px 0 var(--btn-edge); }
+.update-button:focus-visible{ outline:2px solid var(--stamp-top); outline-offset:3px; }
+.boot-detail{ margin:10px 0 0; font-family: var(--mono); font-size:11px; letter-spacing:.04em; line-height:1.4; color: var(--paper-ink3); word-break:break-word; }
+.boot-detail:empty{ display:none; }
+#bootError{ z-index:100; }
 
 /* Selettore del tema (menù iniziale) */
 .theme-picker{ display:flex; justify-content:center; gap:6px; margin:18px auto 0; padding:4px; width:max-content;

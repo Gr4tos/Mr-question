@@ -42,12 +42,15 @@ async function pinned(p, label, sel) {
       const p = await h.newPlayer(`l${w}`, { width: w, height: hgt, random: 0.99 });
       await p.open(); await p.click('#goLocal'); await p.waitScreen('homeScreen');
       for (let i = 0; i < 4; i++) await p.click('#plusPlayers');
+      const sizes = await p.page.$$eval('#nameFields input', els => els.map(e => parseFloat(getComputedStyle(e).fontSize)));
+      check('campi dei nomi: font di almeno 16px (Safari non zooma da solo)', sizes.length === 7 && sizes.every(x => x >= 16), sizes);
       await pinned(p, 'impostazione (7 giocatori)', '#startGame');
       await p.click('#startGame'); await p.waitScreen('turnScreen');
       const emptyBar = await p.page.evaluate(() => getComputedStyle(document.getElementById('showQuestion').closest('.actions')).display === 'none');
       check('turno privato, scheda chiusa: nessuna barra di pulsanti (il pulsante compare solo dopo aver toccato la maniglia)', emptyBar);
       await p.openSheet(); await p.settle(400);
       const m = await pinned(p, 'turno privato, domanda aperta', '#confirmAnswer');
+      check('campo di risposta (a un telefono): font di almeno 16px', (await p.page.$eval('#answerInput', e => parseFloat(getComputedStyle(e).fontSize))) >= 16);
       // tastiera aperta: la barra torna nel flusso e non copre il campo
       await p.page.evaluate(() => document.documentElement.classList.add('kb'));
       const kb = await p.page.evaluate(() => { const bar = document.querySelector('#confirmAnswer').closest('.actions'); const inp = document.getElementById('answerInput').getBoundingClientRect(); const b = bar.getBoundingClientRect(); return { pos: getComputedStyle(bar).position, overlap: !(b.top >= inp.bottom || b.bottom <= inp.top) }; });
@@ -70,6 +73,11 @@ async function pinned(p, label, sel) {
 
     console.log('\n== 375x667: party online (4 giocatori, riquadri grandi) ==');
     const a = await h.newPlayer('Anna', { width: 375, height: 667, random: 0.99 }), b = await h.newPlayer('Bea'), c = await h.newPlayer('Carlo'), d = await h.newPlayer('Dino');
+    const mm = await h.newPlayer('menuOnline', { width: 375, height: 667 });
+    await mm.open(); await mm.click('#goOnline'); await mm.waitScreen('onMenuScreen');
+    const msz = await mm.page.$$eval('#onName, #onCode', els => els.map(e => parseFloat(getComputedStyle(e).fontSize)));
+    check('menù online: campi nome e codice con font di almeno 16px', msz.length === 2 && msz.every(x => x >= 16), msz);
+    check('il viewport non blocca lo zoom manuale (niente maximum-scale né user-scalable)', await mm.page.$eval('meta[name=viewport]', e => !/maximum-scale|user-scalable/i.test(e.content)));
     const code = await a.create('Anna'); await b.join(code, 'Bea'); await c.join(code, 'Carlo');
     await a.waitFor(() => document.querySelectorAll('#lobbyPlayers .player-row').length === 3 && !document.getElementById('onStart').classList.contains('hidden'), null, 8000, 'sala');
     await pinned(a, 'sala con 3 giocatori', '#onStart');
@@ -83,6 +91,7 @@ async function pinned(p, label, sel) {
     for (const p of [a, b, c, d]) { await p.waitScreen('onTurnScreen'); await p.waitFor(() => { const e = document.getElementById('onHandle'); return !!e && !e.disabled; }, null, 8000, 'la scheda'); }
     await a.openSheet(); await a.settle(400);
     const mo = await pinned(a, 'risposta online', '#onSend');
+    check('campo di risposta online: font di almeno 16px', (await a.page.$eval('#onAnswer', e => parseFloat(getComputedStyle(e).fontSize))) >= 16);
     const inp = await a.page.evaluate(() => { window.scrollTo(0, 0); return { inputBottom: Math.round(document.getElementById('onAnswer').getBoundingClientRect().bottom), barTop: Math.round(document.getElementById('onSend').closest('.actions').getBoundingClientRect().top) }; });
     check('risposta online: il campo sta sopra la barra', inp.inputBottom <= inp.barTop, inp);
     await a.answer(1); await b.answer(2); await c.answer(3);

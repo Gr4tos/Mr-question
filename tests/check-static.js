@@ -38,6 +38,14 @@ const afterTokens = css.slice(css.indexOf('*{ box-sizing')).replace(/\/\*[\s\S]*
 const stray = afterTokens.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g) || [];
 check('CSS: nessun colore scritto a mano fuori dai token', stray.length === 0, stray.join(' '));
 check('index.html: nessun colore scritto a mano (fill/stroke/style)', !/(fill|stroke|color|background)(=|:)\s*"?#[0-9a-fA-F]{3,8}/.test(html.replace(/<meta name="theme-color"[^>]*>/, '')));
-check('theme.js è in ASSETS e caricato in <head> subito dopo il CSS', assets.includes('theme.js') && /<link rel="stylesheet" href="style.css">\s*<script src="theme.js"><\/script>/.test(html));
-console.log('cache:', sw.match(/CACHE='([^']+)'/)[1]);
+check('theme.js è in ASSETS e caricato in <head> subito dopo il CSS', assets.includes('theme.js') && /<link rel="stylesheet" href="style\.css\?v=[0-9a-f]{10}">\s*<script src="theme\.js\?v=[0-9a-f]{10}"><\/script>/.test(html));
+// versione unica: version.js aggiornato, caricato prima di app.js e importato dal service worker
+const vr = spawnSync(process.execPath, [path.join(__dirname, 'bump-version.js'), '--check']);
+check('version.js è aggiornato (altrimenti: node tests/bump-version.js)', vr.status === 0, String(vr.stdout).trim());
+check('sw.js importa version.js e il nome della cache viene da lì (nessun numero a mano)', /importScripts\('\.\/version\.js'\)/.test(sw) && /CACHE='mr-question-shell-'\+self\.MRQ_VERSION/.test(sw) && !/CACHE='mr-question-shell-v\d/.test(sw));
+check('version.js è in ASSETS e index.html lo carica prima di app.js', assets.includes('version.js') && /<script src="version\.js\?v=/.test(html) && html.indexOf('<script src="version.js?v=') < html.indexOf('<script src="app.js?v='));
+check('gli indirizzi dei file in index.html e l\'import di online.js portano la versione (?v=...): niente file vecchi dalla cache del browser', ['style.css', 'theme.js', 'version.js', 'config.js', 'app.js'].every(f => html.includes(`${f}?v=`) && new RegExp(`${f.replace('.', '\\.')}\\?v=[0-9a-f]{10}`).test(html)) && read('app.js').includes("import('./online.js?v='+self.MRQ_VERSION)"));
+check('viewport senza blocco dello zoom manuale', !/maximum-scale|user-scalable/i.test(html));
+check('la cartella design/ non è servita né in ASSETS', !assets.some(a => a.startsWith('design/')));
+console.log('versione:', read('version.js').match(/MRQ_VERSION='([^']+)'/)[1]);
 process.exit(bad ? 1 : 0);

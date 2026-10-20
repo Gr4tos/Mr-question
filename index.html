@@ -11,11 +11,52 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Mr Question?">
-  <link rel="stylesheet" href="style.css">
-  <script src="theme.js"></script>
+  <meta name="mrq-version" content="6994c8e320">
+  <link rel="stylesheet" href="style.css?v=6994c8e320">
+  <script src="theme.js?v=6994c8e320"></script>
   <title>Mr Question?</title>
 </head>
 <body>
+  <!-- Avvio a prova di blocco: se app.js non parte (errore, file mancante o troppo lento) compare #bootError con "Riprova". app.js segna window.__mrqReady alla fine. -->
+  <script>
+  (function () {
+    var shown = false;
+    function fail(detail) {
+      if (window.__mrqReady || shown) return;
+      var box = document.getElementById('bootError'); if (!box) return;
+      shown = true;
+      var d = document.getElementById('bootDetail'); if (d) d.textContent = String(detail || '').slice(0, 160);
+      box.hidden = false;
+    }
+    window.addEventListener('error', function (e) {
+      if (e && e.target && e.target !== window) { if (e.target.tagName === 'SCRIPT') fail('Non riesco a caricare ' + (e.target.getAttribute('src') || 'un file')); return; } // immagini o altro che mancano non fermano il gioco
+      fail(e && e.message);
+    }, true);
+    window.addEventListener('unhandledrejection', function (e) { fail(e && e.reason && (e.reason.message || e.reason)); });
+    setTimeout(function () { fail('Il gioco ci mette troppo ad avviarsi.'); }, 8000);
+    // nessun mix di versioni: index.html, version.js, app.js e style.css devono portare la stessa impronta (se no: un file vecchio accanto a uno nuovo)
+    window.addEventListener('load', function () {
+      var m = document.querySelector('meta[name="mrq-version"]'); if (!m || window.__mrqReady !== true) return;
+      var css = String(getComputedStyle(document.documentElement).getPropertyValue('--mrq-version')).replace(/["' ]/g, '');
+      var seen = { pagina: m.content, versione: self.MRQ_VERSION, app: window.__MRQ_APP, stile: css };
+      for (var k in seen) if (!seen[k] || seen[k] !== m.content) { window.__mrqReady = false; fail('File di versioni diverse (' + k + ')'); return; }
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+      var b = document.getElementById('bootRetry'); if (!b) return;
+      b.addEventListener('click', function () {
+        // al secondo tentativo di fila, online, si butta anche la copia salvata (potrebbe essere quella rotta)
+        var n = 0; try { n = +sessionStorage.getItem('mq_boot_retry') || 0; sessionStorage.setItem('mq_boot_retry', String(n + 1)); } catch (x) {}
+        var reload = function () { location.reload(); };
+        if (n >= 1 && navigator.onLine && window.caches) {
+          caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })
+            .then(function () { return navigator.serviceWorker ? navigator.serviceWorker.getRegistrations() : []; })
+            .then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); })
+            .catch(function () {}).then(reload);
+        } else reload();
+      });
+    });
+  })();
+  </script>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
     <defs>
       <g id="mqSilhouette">
@@ -38,6 +79,7 @@
       <img id="brandLogo" class="brand-logo logo-missing" src="assets/images/mr-question-logo.png" alt="Mr Question?" onerror="this.classList.add('logo-missing')">
     </header>
     <div id="netBanner" class="net-banner hidden" role="status">Connessione persa. Riconnessione in corso…</div>
+    <div id="updateBanner" class="update-banner hidden" role="status"><span>È disponibile una nuova versione</span><button id="updateNow" class="update-button" type="button">Aggiorna</button></div>
     <p id="fewBanner" class="notice few-banner hidden" role="status"><span id="fewText">Sono rimasti meno di 3 sospettati collegati. Se nessuno rientra entro 45 secondi, si torna in sala d’attesa.</span> <strong id="fewCount" class="few-count"></strong></p>
 
     <section id="menuScreen" class="screen active">
@@ -228,7 +270,16 @@
     <input id="onAnswer" inputmode="decimal" type="number" step="any" placeholder="0" autocomplete="off">
     <p id="onAnswerError" class="inline-error hidden" role="alert"></p>
   </template>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <div id="bootError" class="exit-dialog" role="alert" hidden>
+    <div class="exit-card">
+      <p class="exit-question">Qualcosa si è inceppato</p>
+      <p class="exit-note">Il gioco non è partito. Controlla la connessione e riprova.</p>
+      <p id="bootDetail" class="boot-detail"></p>
+      <button id="bootRetry" class="primary-button" type="button"><span>Riprova</span></button>
+    </div>
+  </div>
+  <script src="version.js?v=6994c8e320"></script>
+  <script src="config.js?v=6994c8e320"></script>
+  <script src="app.js?v=6994c8e320"></script>
 </body>
 </html>

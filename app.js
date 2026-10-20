@@ -1,3 +1,4 @@
+window.__MRQ_APP='6994c8e320'; // impronta di questo file (la scrive tests/bump-version.js); index.html controlla che tutti i file siano della stessa versione
 const BUILTIN = [
 ['Quante ore di tempo libero hai in una giornata media?','Quante ore al giorno passi davanti a uno schermo per svago?','','','vita quotidiana'],
 ['Quante ore dormi in una notte media?','Quante ore resti a letto in una notte media?','','','abitudini'],
@@ -62,7 +63,7 @@ function persist(){ try { localStorage.setItem('mq_bank', JSON.stringify(state.b
 function loadSaved(){ try { const b=JSON.parse(localStorage.getItem('mq_bank')||'null'); state.bank=Array.isArray(b)&&b.length?b:BUILTIN.slice(); state.used=JSON.parse(localStorage.getItem('mq_used')||'[]')||[]; state.lastImpostor=localStorage.getItem('mq_last')||null; } catch { state.bank=BUILTIN.slice(); state.used=[]; } }
 function showError(id,msg){ const el=$(id); el.textContent=msg; el.classList.remove('hidden'); }
 function clearErrors(){ ['homeError','answerError','resultError','menuError'].forEach(id=>{const e=$(id);if(e)e.classList.add('hidden');}); }
-function showScreen(name){ state.screen=name; $('caseStamp').textContent=(name==='result'||name==='onResult')?'CASO CHIUSO':'CASO APERTO'; $('caseStamp').classList.toggle('hidden',TURN_SCREENS.includes(name)); $('topLabel').classList.toggle('hidden',!TURN_SCREENS.includes(name)); $('exitButton').classList.toggle('hidden',!GAME_SCREENS.includes(name)); screens.forEach(id=>$(id).classList.toggle('active',id===name+'Screen')); window.scrollTo({top:0,behavior:'smooth'}); if(name==='home')renderNames(); }
+function showScreen(name){ state.screen=name; if(typeof paintUpdateBanner==='function')paintUpdateBanner(); $('caseStamp').textContent=(name==='result'||name==='onResult')?'CASO CHIUSO':'CASO APERTO'; $('caseStamp').classList.toggle('hidden',TURN_SCREENS.includes(name)); $('topLabel').classList.toggle('hidden',!TURN_SCREENS.includes(name)); $('exitButton').classList.toggle('hidden',!GAME_SCREENS.includes(name)); screens.forEach(id=>$(id).classList.toggle('active',id===name+'Screen')); window.scrollTo({top:0,behavior:'smooth'}); if(name==='home')renderNames(); }
 const SVGNS='http://www.w3.org/2000/svg';
 function svgEl(tag,attrs){ const e=document.createElementNS(SVGNS,tag); for(const k in attrs)e.setAttribute(k,attrs[k]); return e; }
 // sagoma del detective nel colore del posto n (1..7); i colori sono token CSS (--av-1 .. --av-7)
@@ -100,7 +101,7 @@ function leaveGame(){ closeExit(); state.round=null; state.vote=null; turnSheet.
 function confirmExit(){ if(state.mode==='online'&&window.MRQ.leaveOnline){ closeExit(); window.MRQ.leaveOnline(); } else leaveGame(); }
 function pickQuestion(){ let pool=state.bank.filter(q=>!state.used.includes(q.id)); if(!pool.length){state.used=[];pool=state.bank.slice();} if(!pool.length)return null; const q=pool[Math.floor(Math.random()*pool.length)]; state.used.push(q.id); persist(); return {common:q.common,impostor:q.impostor}; }
 let onlineModule=null;
-async function openOnline(){ clearErrors(); if(!navigator.onLine){ showError('menuError','Sei offline: il party online richiede Internet. Puoi giocare con un solo telefono, anche senza rete.'); return; } const btn=$('goOnline'); btn.disabled=true; try{ onlineModule=onlineModule||await import('./online.js'); await onlineModule.startOnline(); }catch(e){ console.warn('Party online non disponibile',e); showError('menuError','Non riesco a collegarmi al party online. Controlla la connessione, oppure gioca con un solo telefono.'); }finally{ btn.disabled=false; } }
+async function openOnline(){ clearErrors(); if(!navigator.onLine){ showError('menuError','Sei offline: il party online richiede Internet. Puoi giocare con un solo telefono, anche senza rete.'); return; } const btn=$('goOnline'); btn.disabled=true; try{ onlineModule=onlineModule||await import('./online.js?v='+self.MRQ_VERSION); await onlineModule.startOnline(); }catch(e){ console.warn('Party online non disponibile',e); showError('menuError','Non riesco a collegarmi al party online. Controlla la connessione, oppure gioca con un solo telefono.'); }finally{ btn.disabled=false; } }
 window.MRQ = { showScreen, pickQuestion, createSheet, buildTile, avatarSvg, setSeat, escapeHtml: s=>escapeHtml(s), setMode: m=>{ state.mode=m; }, leaveOnline: null };
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 $('minusPlayers').addEventListener('click',()=>{if(state.players>3){state.players--;renderNames();}});$('plusPlayers').addEventListener('click',()=>{if(state.players<7){state.players++;renderNames();}});$('startGame').addEventListener('click',startGame);$('confirmAnswer').addEventListener('click',confirmAnswer);$('goVote').addEventListener('click',goVote);$('confirmVote').addEventListener('click',confirmVote);$('backToAnswers').addEventListener('click',()=>showScreen('vote'));$('rematch').addEventListener('click',startGame);$('newGame').addEventListener('click',()=>showScreen('home'));$('exitButton').addEventListener('click',openExit);$('exitStay').addEventListener('click',closeExit);$('exitConfirm').addEventListener('click',confirmExit);$('goLocal').addEventListener('click',()=>{state.mode='local';clearErrors();showScreen('home');});$('goOnline').addEventListener('click',openOnline);$('backToMenu').addEventListener('click',()=>showScreen('menu'));$('exitDialog').addEventListener('click',e=>{if(e.target===$('exitDialog'))closeExit();});$('helpButton').addEventListener('click',openHelp);$('helpClose').addEventListener('click',closeHelp);$('helpDialog').addEventListener('click',e=>{if(e.target===$('helpDialog'))closeHelp();});document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('exitDialog').classList.contains('hidden'))closeExit();else if(!$('helpDialog').classList.contains('hidden'))closeHelp();});$('brandLogo').addEventListener('error',()=>{$('brandLogo').classList.add('logo-missing');});
@@ -219,7 +220,33 @@ const turnSheet=createSheet({root:$('turnSheet'),cover:$('turnCover'),inside:$('
   fill:box=>{const r=state.round;const q=r.turn===r.impostor?r.q.impostor:r.q.common;$('questionText').textContent=q;box.querySelector('.sheet-who').textContent='FASCICOLO DI '+state.names[r.turn].toLocaleUpperCase('it');
     const inp=$('answerInput');inp.addEventListener('input',clearErrors);inp.addEventListener('keydown',e=>{if(e.key==='Enter')confirmAnswer();});}});
 loadSaved();renderNames();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+// ---- aggiornamenti: il service worker nuovo resta in attesa; il banner "Aggiorna" compare solo nel menù e nel verdetto ----
+const UPDATE_SCREENS=['menu','result','onResult'];
+let updateReady=false;
+function paintUpdateBanner(){ $('updateBanner').classList.toggle('hidden',!(updateReady&&UPDATE_SCREENS.includes(state.screen))); }
+(function(){
+  if(!('serviceWorker' in navigator))return;
+  let reloading=false,wantReload=false;
+  const ask=(worker,type)=>new Promise(resolve=>{const ch=new MessageChannel();ch.port1.onmessage=e=>resolve(e.data);try{worker.postMessage({type},[ch.port2]);}catch(_){resolve(null);}setTimeout(()=>resolve(null),1500);});
+  async function handle(reg){
+    const w=reg.waiting; if(!w||!navigator.serviceWorker.controller)return; // al primo avvio non c'è niente da aggiornare
+    const theirs=await ask(w,'VERSION');
+    if(theirs&&theirs===self.MRQ_VERSION){ w.postMessage({type:'SKIP_WAITING'}); return; } // la pagina è già la versione nuova: ci si allinea senza disturbare
+    updateReady=true; paintUpdateBanner();
+  }
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(wantReload&&!reloading){reloading=true;location.reload();} });
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{
+      window.MRQ_SW=reg; handle(reg);
+      reg.addEventListener('updatefound',()=>{ const n=reg.installing; if(n)n.addEventListener('statechange',()=>{ if(n.state==='installed')handle(reg); }); });
+      let last=Date.now();
+      const check=()=>{ if(Date.now()-last>10*60*1000){last=Date.now();reg.update().catch(()=>{});} };
+      document.addEventListener('visibilitychange',()=>{ if(!document.hidden)check(); });
+      setInterval(()=>{last=0;check();},30*60*1000);
+      $('updateNow').addEventListener('click',()=>{ const w=reg.waiting; if(!w){location.reload();return;} wantReload=true; w.postMessage({type:'SKIP_WAITING'}); });
+    }).catch(()=>{});
+  });
+})();
 
 // ---- tema chiaro / scuro (theme.js applica il tema; qui solo il selettore nel menù) ----
 (function(){
@@ -239,3 +266,6 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
   document.addEventListener('focusout',()=>setTimeout(upd,250));
   upd();
 })();
+
+try{sessionStorage.removeItem('mq_boot_retry');}catch(e){}
+window.__mrqReady=true; // avvio riuscito: spegne la schermata d'errore all'avvio (vedi index.html)
